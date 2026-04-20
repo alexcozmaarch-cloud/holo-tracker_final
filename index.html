@@ -507,7 +507,7 @@ hr.div{border:none;border-top:1px solid var(--border);margin:36px 0;}
   <!-- DESKTOP TABLE -->
   <div class="desk-table">
     <table class="cards-table">
-      <thead><tr><th></th><th>Card · Set · Notes</th><th>Game</th><th>Last Price</th><th>Mentions</th><th>Last Seen</th><th>Signal</th><th></th></tr></thead>
+      <thead><tr><th></th><th>Card · Set · Notes</th><th>Game</th><th>Last Price</th><th>Market</th><th>Mentions</th><th>Last Seen</th><th>Signal</th><th></th></tr></thead>
       <tbody id="tbody"></tbody>
     </table>
   </div>
@@ -2172,7 +2172,7 @@ function renderCards(){
   rows.forEach((c,i)=>{
     const s=signal(c),lp=lastP(c);
     const div=document.createElement('div'); div.className='mob-card'; div.style.animationDelay=(i*0.03)+'s';
-    div.innerHTML=`<div class="mob-top"><div><div class="mob-name">${esc(c.name)}</div><div class="mob-set">${esc(String(c.set||''))}</div></div>${badgeHtml(s)}${buyZoneBadge(buyZone(c))}</div><div class="mob-mid"><span class="mob-price">${fmtCHF(lp)}</span>${tagHtml(c.game)}<span class="mob-info">${c.mentions} mention${c.mentions!==1?'s':''}</span></div><div class="mob-bot"><div style="display:flex;gap:8px"><button class="btn-xs btn-mention" onclick="quickMention(event,'${c.id}')">+1</button><button class="btn-xs btn-unmention" onclick="removeMention(event,'${c.id}')">−1</button><button class="btn-xs btn-del" onclick="delCard(event,'${c.id}')">✕</button></div></div>`;
+    div.innerHTML=`<div class="mob-top"><div><div class="mob-name">${esc(c.name)}</div><div class="mob-set">${esc(String(c.set||''))}</div></div>${badgeHtml(s)}${buyZoneBadge(buyZone(c))}</div><div class="mob-mid"><span class="mob-price">${fmtCHF(lp)}</span>${c.cmLive?.price>0?`<span style="font-family:DM Mono,monospace;font-size:11px;color:var(--green);padding:1px 5px;border-radius:3px;background:rgba(57,217,138,0.1)">\u20AC${c.cmLive.price.toFixed(2)}</span>`:""}${tagHtml(c.game)}<span class="mob-info">${c.mentions} mention${c.mentions!==1?'s':''}</span></div><div class="mob-bot"><div style="display:flex;gap:8px"><button class="btn-xs btn-mention" onclick="quickMention(event,'${c.id}')">+1</button><button class="btn-xs btn-unmention" onclick="removeMention(event,'${c.id}')">−1</button><button class="btn-xs btn-del" onclick="delCard(event,'${c.id}')">✕</button></div></div>`;
     div.onclick=e=>{if(!e.target.closest('button'))openModal(c.id);};
     mob.appendChild(div);
   });
@@ -2212,6 +2212,7 @@ function render(){
         <span class="price-val">${fmtCHF(lp)}</span>
         ${c.target?`<span style="font-family:DM Mono,monospace;font-size:9px;margin-left:6px;color:${lp<=c.target?'var(--green)':'var(--text-dimmer)'}">🎯${fmtCHF(c.target)}</span>`:''}
       </td>
+      <td>${c.cmLive?.price>0?`<span style="font-family:DM Mono,monospace;font-size:11px;color:var(--green)">\u20AC${c.cmLive.price.toFixed(2)}</span>`:`<span style="color:var(--text-dimmer);font-size:10px">\u2014</span>`}</td>
       <td><div class="mentions-wrap"><span class="mentions-num">${c.mentions}</span><div class="mdots">${c.mentions<=5?Array.from({length:c.mentions},()=>'<div class="mdot on"></div>').join('')+Array.from({length:5-c.mentions},()=>'<div class="mdot"></div>').join(''):Array.from({length:5},()=>'<div class="mdot on" style="background:var(--hot)"></div>').join('')+"<span style=\"font-family:DM Mono,monospace;font-size:9px;color:var(--hot);margin-left:3px\">+${c.mentions-5}</span>"}</div></div></td>
       <td>${lastSeenHtml(c)}</td>
       <td>
