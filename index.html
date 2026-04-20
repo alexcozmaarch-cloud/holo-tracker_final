@@ -1080,27 +1080,48 @@ function parseSetField(raw){
   const s = String(raw||'').trim();
   if(!s) return {setId:null, localId:null};
 
-  // Space-separated: "sv03.5 199" — most explicit format
+  let setId = null, localId = null;
+
+  // Space-separated: "sv03.5 199"
   const sp = s.indexOf(' ');
   if(sp > 0){
-    return {setId: s.slice(0,sp).toLowerCase(), localId: s.slice(sp+1).trim()};
+    setId  = s.slice(0,sp).toLowerCase();
+    localId = s.slice(sp+1).trim();
   }
-
-  // Hyphen-separated: "svp-SV120" or "sv03.5-199"
-  // Rule: everything before the LAST hyphen = setId, after = localId
-  // BUT only if the part before the last hyphen starts with a letter
-  // (to avoid treating "SV120" as setId="SV1" localId="20")
-  const hy = s.lastIndexOf('-');
-  if(hy > 0){
-    const before = s.slice(0, hy);
-    const after  = s.slice(hy+1);
-    if(/^[a-zA-Z]/i.test(before) && after.length > 0){
-      return {setId: before.toLowerCase(), localId: after};
+  // Hyphen-separated: "svp-SV120", "sv03.5-199", "swshp-SWSH144"
+  else {
+    const hy = s.lastIndexOf('-');
+    if(hy > 0){
+      const before = s.slice(0, hy);
+      const after  = s.slice(hy+1);
+      if(/^[a-zA-Z]/i.test(before) && after.length > 0){
+        setId  = before.toLowerCase();
+        localId = after;
+      }
     }
   }
 
-  // Pure number or promo code — localId only
-  return {setId:null, localId:s};
+  if(setId && localId){
+    // Strip leading letter-prefix from localId if it duplicates the set code
+    // e.g. svp-SV120 → localId "SV120" → strip "SV" → "120"
+    // e.g. swshp-SWSH144 → localId "SWSH144" → strip "SWSH" → "144"
+    // Rule: if localId starts with letters followed by digits,
+    //       and those letters (uppercased) appear in setId (uppercased),
+    //       strip the letters to get a clean numeric localId
+    const prefixMatch = localId.match(/^([A-Za-z]+)(\d+.*)$/);
+    if(prefixMatch){
+      const letterPart = prefixMatch[1].toUpperCase();
+      const numPart    = prefixMatch[2];
+      // Strip if the letter prefix is contained in the setId
+      if(setId.toUpperCase().includes(letterPart) || setId.toUpperCase().replace(/[^A-Z]/g,'').includes(letterPart)){
+        localId = numPart;
+      }
+    }
+    return {setId, localId};
+  }
+
+  // Fallback: pure number or standalone promo code
+  return {setId: null, localId: s};
 }
 
 // ── 2. Parse CM pricing from a TCGdex card detail response ───────
@@ -1111,7 +1132,7 @@ function _parseCMPricing(detail, variation){
 
   // ── New format (detail.pricing.cardmarket) ──
   const nc = detail?.pricing?.cardmarket;
-  if(nc && (nc.avg || nc['avg-holo'])){
+  if(nc && typeof nc === 'object' && (nc.avg != null || nc['avg-holo'] != null)){
     return {
       price: isHolo ? (nc['avg-holo'] ?? nc.avg        ?? null) : (nc.avg         ?? null),
       trend: isHolo ? (nc['trend-holo']?? nc.trend     ?? null) : (nc.trend       ?? null),
