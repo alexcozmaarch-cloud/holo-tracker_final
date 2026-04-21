@@ -54,7 +54,7 @@ header{padding:28px 0 24px;display:flex;align-items:flex-end;justify-content:spa
 .add-section::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--purple),var(--gold),var(--blue));}
 .section-label{font-family:DM Mono,monospace;font-size:10px;letter-spacing:0.2em;color:var(--purple);text-transform:uppercase;margin-bottom:14px;}
 .form-row1{display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px;margin-bottom:10px;}
-.form-row2{display:grid;grid-template-columns:1fr 1fr 2fr auto;gap:10px;align-items:end;}
+.form-row2{display:grid;grid-template-columns:1fr 2fr auto;gap:10px;align-items:end;}
 .ff{display:flex;flex-direction:column;gap:5px;}
 .ff label{font-family:DM Mono,monospace;font-size:10px;letter-spacing:0.12em;color:var(--text-dim);text-transform:uppercase;}
 .ff input,.ff select,.ff textarea{background:var(--surface);border:1px solid var(--border);border-radius:2px;padding:9px 12px;color:var(--text);font-family:DM Mono,monospace;font-size:12px;outline:none;width:100%;}
@@ -244,28 +244,18 @@ hr.div{border:none;border-top:1px solid var(--border);margin:36px 0;}
 .saving-box{background:#16161f;border:1px solid #3d3d5c;border-radius:2px;padding:20px 32px;display:flex;align-items:center;gap:14px;font-family:DM Mono,monospace;font-size:13px;color:#e8e8f0;}
 .saving-spinner{width:18px;height:18px;border:2px solid #2a2a3a;border-top-color:#b77fff;border-radius:50%;animation:spin 0.7s linear infinite;flex-shrink:0;}
 @keyframes spin{to{transform:rotate(360deg)}}
-.cm-hist-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--border);}
-.cm-hist-row:last-child{border-bottom:none;}
-
-/* Market price cell */
-.mkt-cell-price{font-family:'Bebas Neue',sans-serif;font-size:18px;line-height:1;}
-.mkt-cell-delta{font-family:DM Mono,monospace;font-size:9px;margin-left:3px;vertical-align:middle;}
-.mkt-cell-week{font-family:DM Mono,monospace;font-size:9px;color:var(--text-dimmer);margin-top:1px;}
-
-/* Price fetch shimmer */
-@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
-.price-shimmer{display:inline-block;width:52px;height:14px;border-radius:2px;background:linear-gradient(90deg,var(--border) 25%,var(--border-bright) 50%,var(--border) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;}
-
-/* TCGdex hint row */
-#in-tcgdex-hint{border-left:2px solid rgba(77,159,255,0.5);}
-.tcgdex-hint-bar{margin-top:8px;padding:7px 12px;background:rgba(77,159,255,0.06);border:1px solid rgba(77,159,255,0.2);border-left:2px solid rgba(77,159,255,0.5);border-radius:2px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
-
-/* Tighten table column for Actions */
-.cards-table th:last-child,.cards-table td:last-child{width:120px;}
-/* Market column — don't shrink */
-.cards-table th:nth-child(5),.cards-table td:nth-child(5){white-space:nowrap;min-width:90px;}
-/* Modal price chart */
-.modal-chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:2px;padding:12px;margin-bottom:16px;}
+/* BUY DIP badge */
+.badge.buydip{background:rgba(57,217,138,0.15);border:1px solid rgba(57,217,138,0.5);color:var(--green);}
+/* CM URL help block in edit panel */
+.cm-url-how{margin-top:6px;padding:8px 10px;background:rgba(245,200,66,0.05);border:1px solid rgba(245,200,66,0.15);border-left:2px solid rgba(245,200,66,0.5);border-radius:2px;font-family:DM Mono,monospace;font-size:10px;color:var(--text-dim);line-height:1.7;}
+.cm-url-how b{color:var(--gold);}
+.cm-url-hint{margin-top:5px;padding:5px 10px;border-radius:2px;font-family:DM Mono,monospace;font-size:10px;}
+.cm-url-hint.ok{background:rgba(57,217,138,0.08);border:1px solid rgba(57,217,138,0.25);color:var(--green);}
+.cm-url-hint.err{background:rgba(255,77,109,0.08);border:1px solid rgba(255,77,109,0.2);color:var(--red);}
+/* No-price callout in modal */
+.cm-noprice-box{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:2px;padding:12px 14px;font-family:DM Mono,monospace;font-size:11px;color:var(--text-dim);line-height:1.8;}
+.cm-noprice-box b{color:var(--gold);}
+.cm-noprice-box code{color:var(--blue);font-size:10px;}
 /* CardMarket live price */
 .cm-price-box{border-radius:2px;padding:10px 14px;margin-bottom:14px;font-family:DM Mono,monospace;font-size:11px;line-height:1.7;display:flex;align-items:flex-start;gap:10px;}
 .cm-price-box.up{background:rgba(57,217,138,0.08);border:1px solid rgba(57,217,138,0.3);color:var(--green);}
@@ -437,7 +427,7 @@ hr.div{border:none;border-top:1px solid var(--border);margin:36px 0;}
       <div class="ff" style="position:relative;">
         <label>Card Name</label>
         <input type="text" id="in-name" placeholder="e.g. Charizard VMAX" autocomplete="off"
-          oninput="onCardNameInput();scheduleAddFormTCGdexHint()" onkeydown="onCardNameKey(event)" />
+          oninput="onCardNameInput()" onkeydown="onCardNameKey(event)" />
         <div id="name-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#16161f;border:1px solid #3d3d5c;border-top:none;border-radius:0 0 2px 2px;z-index:50;max-height:220px;overflow-y:auto;"></div>
       </div>
       <div class="ff"><label>Set / Set ID</label><input type="text" id="in-set" placeholder="type set name or ID…" autocomplete="off" /></div>
@@ -466,27 +456,8 @@ hr.div{border:none;border-top:1px solid var(--border);margin:36px 0;}
           <option value="other">Other</option>
         </select>
       </div>
-      <div class="ff">
-        <label>Variation <span style="color:var(--text-dimmer);font-size:9px;">affects CM price picked</span></label>
-        <select id="in-variation">
-          <option value="">Auto-detect</option>
-          <option value="normal">Normal</option>
-          <option value="holo">Holo</option>
-          <option value="reverse">Reverse Holo</option>
-          <option value="full-art">Full Art</option>
-          <option value="alt-art">Alt Art / SIR</option>
-          <option value="promo">Promo</option>
-        </select>
-      </div>
       <div class="ff"><label>Notes (YouTuber, reason…)</label><textarea id="in-notes" placeholder="e.g. Heard on TCC Collector, hype around reprint…"></textarea></div>
       <button class="btn-add" id="btn-add" onclick="addCard()">ADD</button>
-    </div>
-    <!-- TCGdex ID hint — auto-populated when name+set resolve -->
-    <div id="in-tcgdex-hint" class="tcgdex-hint-bar" style="display:none;">
-      <span style="font-family:DM Mono,monospace;font-size:10px;color:var(--text-dim);">TCGdex ID:</span>
-      <span id="in-tcgdex-id-val" style="font-family:DM Mono,monospace;font-size:11px;color:var(--blue);font-weight:500;"></span>
-      <span id="in-tcgdex-name-val" style="font-family:DM Mono,monospace;font-size:10px;color:var(--text-dimmer);"></span>
-      <span id="in-tcgdex-price-val" style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:var(--green);margin-left:auto;"></span>
     </div>
   </div>
 
@@ -502,6 +473,7 @@ hr.div{border:none;border-top:1px solid var(--border);margin:36px 0;}
     <select class="ctrl-select" id="in-sort" onchange="render()">
       <option value="mentions">Most Mentioned</option>
       <option value="new">Newest</option>
+      <option value="mentions">Most Mentioned</option>
       <option value="price-hi">Highest Price</option>
       <option value="price-lo">Lowest Price</option>
       <option value="az">A–Z</option>
@@ -541,15 +513,15 @@ hr.div{border:none;border-top:1px solid var(--border);margin:36px 0;}
   </div>
 
   <!-- PRICE STATUS BAR -->
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px;padding:6px 10px;background:var(--card-bg);border:1px solid var(--border);border-radius:2px;">
-    <span id="price-status" style="font-family:DM Mono,monospace;font-size:10px;color:var(--text-dimmer);">Prices load automatically on startup</span>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:6px;padding:0 2px;">
+    <span id="price-status" style="font-family:DM Mono,monospace;font-size:10px;color:var(--text-dimmer);"></span>
     <button onclick="refreshPrices()" style="font-family:DM Mono,monospace;font-size:10px;padding:4px 12px;background:rgba(57,217,138,0.08);border:1px solid rgba(57,217,138,0.25);color:var(--green);border-radius:2px;cursor:pointer;white-space:nowrap;">↻ Refresh Prices</button>
   </div>
 
   <!-- DESKTOP TABLE -->
   <div class="desk-table">
     <table class="cards-table">
-      <thead><tr><th></th><th>Card · Set · Notes</th><th>Game</th><th>Last Price</th><th style="color:var(--green)">CM Market</th><th>Mentions</th><th>Last Seen</th><th>Signal</th><th></th></tr></thead>
+      <thead><tr><th></th><th>Card · Set · Notes</th><th>Game</th><th>Last Price</th><th>Market</th><th>Mentions</th><th>Last Seen</th><th>Signal</th><th></th></tr></thead>
       <tbody id="tbody"></tbody>
     </table>
   </div>
@@ -943,8 +915,13 @@ hr.div{border:none;border-top:1px solid var(--border);margin:36px 0;}
           <textarea id="edit-notes"></textarea>
         </div>
         <div class="edit-field" style="grid-column:1/-1;">
-          <label>🔗 Cardmarket Direct URL <span style="color:var(--text-dimmer);font-size:9px;">paste exact card page for precise prices</span></label>
-          <input type="text" id="edit-cm-url" placeholder="https://www.cardmarket.com/en/Pokemon/Products/Singles/…" />
+          <label>🔗 Cardmarket URL <span style="color:var(--text-dimmer);font-size:9px;">— use for promos &amp; cards TCGdex can't price</span></label>
+          <input type="text" id="edit-cm-url" placeholder="https://www.cardmarket.com/en/Pokemon/Products/Singles/…" oninput="onCmUrlInput(this)" />
+          <div id="edit-cm-url-hint" class="cm-url-hint" style="display:none;"></div>
+          <div class="cm-url-how">
+            <b>How to get the URL:</b> go to cardmarket.com → search your card → open the <i>exact card listing page</i> (not the search results) → copy the URL from your browser address bar → paste it above.
+            <span style="color:var(--text-dimmer);">Example: <code style="color:var(--blue);font-size:9px;">cardmarket.com/en/Pokemon/Products/Singles/Scarlet-Violet-Promos/Pikachu-SVP-EN-001</code></span>
+          </div>
         </div>
         <div class="edit-field">
           <label>TCGdex Card ID <span style="color:var(--text-dimmer);font-size:9px;">auto-filled or paste from tcgdex.net</span></label>
@@ -1252,23 +1229,25 @@ async function scheduleCMBgFetch(forceAll){
         const {detail, cm} = res;
         // Save tcgdexId for future lookups even if no price
         if(detail.id && !c.tcgdexId){ c.tcgdexId=detail.id; }
+        let price = cm.price||null, trend=cm.trend||null, avg7=cm.avg7||null, avg30=cm.avg30||null, low=cm.low||null;
+        // Fallback: scrape CM URL if TCGdex has no price but card has a cmUrl set
+        if(!price && c.cmUrl){
+          const scraped = await fetchCMPriceFromUrl(c.cmUrl);
+          if(scraped?.price > 0){ price=scraped.price; trend=scraped.trend; avg7=scraped.avg7; avg30=scraped.avg30; low=scraped.low; }
+        }
         const data = {
-          price:    cm.price||null,
-          trend:    cm.trend||null,
-          avg7:     cm.avg7||null,
-          avg30:    cm.avg30||null,
-          low:      cm.low||null,
+          price, trend, avg7, avg30, low,
           image:    detail.image||null,
           tcgdexId: detail.id||null,
           fetchedAt: now,
         };
         _cmPrices[c.id] = data;
-        if(cm.price > 0){
+        if(price > 0){
           c.cmLive = data;
           fetched++;
         } else {
           noPrice++;
-          console.log('[no-price]',c.name,c.set,'— TCGdex has card but no CM data');
+          console.log('[no-price]',c.name,c.set,'— no CM data from TCGdex or CM URL');
         }
       }catch(e){
         // Mark as attempted so we don't retry immediately
@@ -1553,11 +1532,9 @@ async function saveCard(action, payload){
     try{ data=JSON.parse(rawText); }
     catch{ throw new Error('Bad response: '+rawText.slice(0,100)); }
     if(data.error) throw new Error(data.error);
-    cards      = normaliseCards(data.cards || cards);
+    cards      = data.cards      || cards;
     sealed     = data.sealed     || sealed;
     if(data.collection) collection = data.collection;
-    // Re-apply CM prices — server response replaces the cards array and loses cmLive refs
-    cards.forEach(c=>{ if(!c.cmLive && _cmPrices[c.id]?.price>0) c.cmLive=_cmPrices[c.id]; });
     localStorage.setItem(KEY_CACHE,  JSON.stringify(cards));
     localStorage.setItem(KEY_SCACHE, JSON.stringify(sealed));
     localStorage.setItem(KEY_COLL,   JSON.stringify(collection));
@@ -1671,7 +1648,7 @@ function wireSetAutocomplete(inputId, afterSelect){
 function wireAllSetAutocompletes(){
   // Only wire the always-visible fields at startup
   // Modal fields (edit-set, cedit-set) wired when their modal opens
-  wireSetAutocomplete('in-set', ()=>{ scheduleAddFormTCGdexHint(); });
+  wireSetAutocomplete('in-set');
   wireSetAutocomplete('s-set');
   wireSetAutocomplete('coll-set', ()=>{ updateCollMarket(); });
 }
@@ -1775,13 +1752,12 @@ function fmtPrice(amount, currency){
 
 // ── ADD CARD ─────────────────────────────────────────────────────────────────
 async function addCard(){
-  const name      = document.getElementById('in-name').value.trim();
-  const set       = document.getElementById('in-set').value.trim();
-  const rawPrice  = parseFloat(document.getElementById('in-price').value);
-  const currency  = document.getElementById('in-currency').value;
-  const game      = document.getElementById('in-game').value;
-  const notes     = document.getElementById('in-notes').value.trim();
-  const variation = document.getElementById('in-variation')?.value || '';
+  const name     = document.getElementById('in-name').value.trim();
+  const set      = document.getElementById('in-set').value.trim();
+  const rawPrice = parseFloat(document.getElementById('in-price').value);
+  const currency = document.getElementById('in-currency').value;
+  const game     = document.getElementById('in-game').value;
+  const notes    = document.getElementById('in-notes').value.trim();
 
   if(!name){ toast('Enter a card name','info'); return; }
 
@@ -1819,7 +1795,7 @@ async function addCard(){
     if(ok) toast('+1 mention for "'+ex.name+'"'+(priceInCHF>0?' · '+fmtCHF(priceInCHF)+(entry?.carriedForward?' (last known)':''):''), 'success');
   } else {
     const priceHistory = entry ? [entry] : [];
-    const card = {id:Date.now().toString(), name, set:set||'—', game, notes, variation:variation||null, firstSeen:today, mentions:1, priceHistory};
+    const card = {id:Date.now().toString(), name, set:set||'—', game, notes, firstSeen:today, mentions:1, priceHistory};
     ok = await saveCard('upsert',{card});
     if(ok) toast('"'+name+'" added'+(priceInCHF>0?' · '+fmtCHF(priceInCHF):''), 'success');
   }
@@ -1828,8 +1804,6 @@ async function addCard(){
   if(ok){
     render();
     ['in-name','in-set','in-price','in-notes'].forEach(id=>document.getElementById(id).value='');
-    const varEl = document.getElementById('in-variation'); if(varEl) varEl.value='';
-    const hintEl = document.getElementById('in-tcgdex-hint'); if(hintEl) hintEl.style.display='none';
     document.getElementById('in-name').focus();
   }
 }
@@ -2190,21 +2164,7 @@ function render(){
         <span class="price-val">${fmtCHF(lp)}</span>
         ${c.target?`<span style="font-family:DM Mono,monospace;font-size:9px;margin-left:6px;color:${lp<=c.target?'var(--green)':'var(--text-dimmer)'}">🎯${fmtCHF(c.target)}</span>`:''}
       </td>
-      <td>${(()=>{
-        if(c.cmLive?.price > 0){
-          const p = c.cmLive.price;
-          const lp = lastP(c);
-          const diff = lp>0 ? ((p - lp)/lp*100) : 0;
-          const col = diff > 8 ? 'var(--green)' : diff < -8 ? 'var(--red)' : 'var(--text)';
-          const arrow = Math.abs(diff)>=2 ? `<span class="mkt-cell-delta" style="color:${col}">${diff>=0?'▲':'▼'}${Math.abs(diff).toFixed(0)}%</span>` : '';
-          const week = c.cmLive.week ? `<div class="mkt-cell-week">${c.cmLive.week}</div>` : '';
-          return `<span class="mkt-cell-price" style="color:${col}">€${p.toFixed(2)}</span>${arrow}${week}`;
-        }
-        // Show shimmer if a fetch is in progress, dash if nothing
-        return _cmFetchRunning
-          ? '<span class="price-shimmer"></span>'
-          : '<span style="color:var(--text-dimmer);font-family:DM Mono,monospace;font-size:10px;">—</span>';
-      })()}</td>
+      <td>${c.cmLive?.price>0?`<span style="font-family:DM Mono,monospace;font-size:11px;color:var(--green)">\u20AC${c.cmLive.price.toFixed(2)}</span>`:`<span style="color:var(--text-dimmer);font-size:10px">\u2014</span>`}</td>
       <td><div class="mentions-wrap"><span class="mentions-num">${c.mentions}</span><div class="mdots">${c.mentions<=5?Array.from({length:c.mentions},()=>'<div class="mdot on"></div>').join('')+Array.from({length:5-c.mentions},()=>'<div class="mdot"></div>').join(''):Array.from({length:5},()=>'<div class="mdot on" style="background:var(--hot)"></div>').join('')+"<span style=\"font-family:DM Mono,monospace;font-size:9px;color:var(--hot);margin-left:3px\">+${c.mentions-5}</span>"}</div></div></td>
       <td>${lastSeenHtml(c)}</td>
       <td>
@@ -2232,7 +2192,7 @@ function render(){
     div.className='mob-card'; div.style.animationDelay=(i*0.03)+'s';
     div.innerHTML=`
       <div class="mob-top"><div><div class="mob-name">${esc(c.name)}</div><div class="mob-set">${esc(c.set)}</div>${c.notes?`<div class="mob-note">📝 ${esc(c.notes)}</div>`:''}</div>${badgeHtml(s)}${buyZoneBadge(buyZone(c))}</div>
-      <div class="mob-mid"><span class="mob-price">${fmtCHF(lp)}</span>${c.cmLive?.price>0?`<span style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--green);padding:1px 7px;border-radius:2px;background:rgba(57,217,138,0.1);border:1px solid rgba(57,217,138,0.2);">€${c.cmLive.price.toFixed(2)}</span>`:''}${tagHtml(c.game)}<span class="mob-info">${c.mentions} mention${c.mentions!==1?'s':''}</span></div>
+      <div class="mob-mid"><span class="mob-price">${fmtCHF(lp)}</span>${tagHtml(c.game)}<span class="mob-info">${c.mentions} mention${c.mentions!==1?'s':''}</span><span class="mob-info">${fmtDate(c.firstSeen)}</span></div>
       <div class="mob-bot"><div style="display:flex;gap:8px"><button class="btn-xs btn-mention" onclick="quickMention(event,'${c.id}')">+1</button><button class="btn-xs btn-unmention" onclick="removeMention(event,'${c.id}')">−1</button><button class="btn-xs btn-del" onclick="delCard(event,'${c.id}')">✕</button></div></div>`;
     div.onclick=e=>{if(!e.target.closest('button'))openModal(c.id);};
     mob.appendChild(div);
@@ -2344,55 +2304,90 @@ async function fetchCMPrice(card){
 
   box.style.display='flex';
   box.className='cm-price-box loading';
-  box.innerHTML='<span class="cm-icon">⟳</span><div>Fetching live data…</div>';
+  box.innerHTML='<span class="cm-icon">⟳</span><div>Fetching live price…</div>';
   if(imgWrap) imgWrap.innerHTML='<span style="font-family:DM Mono,monospace;font-size:9px;color:var(--text-dimmer);text-align:center;padding:8px;">loading…</span>';
 
   // Set CM link immediately
   const cmSearchUrl='https://www.cardmarket.com/en/Pokemon/Products/Search?searchString='+encodeURIComponent(card.name);
   const cmLink=document.getElementById('btn-cm-link');
-  if(cmLink){ cmLink.href=card.cmUrl||cmSearchUrl; cmLink.innerHTML=card.cmUrl?'🔗 Cardmarket ✓':'🔗 Cardmarket'; cmLink.style.color=card.cmUrl?'var(--green)':''; }
-
-  if(_cmCache[card.id]){ _renderCMResult(_cmCache[card.id],card,box,imgWrap); return; }
-
-  try{
-    // Extract card number — handle formats like: 72, SV72, MEW 199, SWSH050, sv1-72
-    const setStr = String(card.set||'');
-    // Try to get just the trailing number, ignoring set prefix letters
-    const numMatch = setStr.match(/(\d{1,4})(?!\d)/);
-    const cardNum = numMatch ? parseInt(numMatch[1],10).toString() : '';
-
-    // If user set a TCGdex ID directly — use it, skip search
-    // Use the unified TCGdex fetcher
-    const tcgRes = await fetchCardFromTCGdex(card.name, card.set, card.variation, card.tcgdexId);
-    if(!tcgRes) throw new Error('not found on TCGdex — check Set field (e.g. sv03.5 199)');
-
-    const {detail, cm:cmParsed} = tcgRes;
-    if(cmLink && cmParsed.url && !card.cmUrl) cmLink.href='https://www.cardmarket.com'+cmParsed.url;
-    if(detail.id && !card.tcgdexId) card.tcgdexId = detail.id;
-
-    const data={
-      live:  cmParsed.price,
-      trend: cmParsed.trend,
-      avg7:  cmParsed.avg7,
-      avg30: cmParsed.avg30,
-      low:   cmParsed.low,
-      image: detail.image||null,
-      name:  detail.name||card.name,
-      tcgdexId: detail.id
-    };
-    _cmCache[card.id]=data;
-    _renderCMResult(data,card,box,imgWrap);
-
-    // Update edit panel hint if open
-    const hint=document.getElementById('edit-tcgdex-hint');
-    if(hint&&hint.isConnected) hint.innerHTML='✓ Linked to TCGdex: <b style="color:var(--green)">'+tcgdexId+'</b> · '+esc(data.name);
-
-  }catch(err){
-    console.log('[fetchCMPrice]',err.message);
-    box.className='cm-price-box flat';
-    box.innerHTML=`<span class="cm-icon">🔗</span><div>No live data — <a href="${cmSearchUrl}" target="_blank" style="color:var(--blue)">search Cardmarket</a><br><span style="font-family:DM Mono,monospace;font-size:9px;color:var(--text-dimmer);">Tip: set TCGdex ID in Edit for exact match</span></div>`;
-    if(imgWrap) imgWrap.innerHTML='<span style="font-family:DM Mono,monospace;font-size:9px;color:var(--text-dimmer);text-align:center;padding:8px;">no image</span>';
+  if(cmLink){
+    cmLink.href = card.cmUrl || cmSearchUrl;
+    cmLink.innerHTML = card.cmUrl ? '🔗 CM ✓' : '🔗 Cardmarket';
+    cmLink.style.color = card.cmUrl ? 'var(--green)' : '';
   }
+
+  // Use in-memory cache to avoid re-fetching on repeated opens
+  if(_cmCache[card.id]){ _renderCMResult(_cmCache[card.id], card, box, imgWrap); return; }
+
+  let data = null;
+
+  // ── Path A: TCGdex (free, no auth, covers most sets) ──────────────────────
+  try{
+    const tcgRes = await fetchCardFromTCGdex(card.name, card.set, card.variation, card.tcgdexId);
+    if(tcgRes){
+      const {detail, cm:cmParsed} = tcgRes;
+      if(cmLink && cmParsed.url && !card.cmUrl) cmLink.href='https://www.cardmarket.com'+cmParsed.url;
+      if(detail.id && !card.tcgdexId) card.tcgdexId = detail.id;
+      // Update TCGdex hint in edit panel if open
+      const hint=document.getElementById('edit-tcgdex-hint');
+      if(hint&&hint.isConnected&&detail.id) hint.innerHTML='✓ Linked to TCGdex: <b style="color:var(--green)">'+detail.id+'</b> · '+esc(detail.name||card.name);
+      if(cmParsed.price > 0){
+        data = {live:cmParsed.price, trend:cmParsed.trend, avg7:cmParsed.avg7, avg30:cmParsed.avg30, low:cmParsed.low, image:detail.image||null, name:detail.name||card.name, tcgdexId:detail.id, source:'tcgdex'};
+      } else if(detail.image){
+        // TCGdex found card but no CM price — still grab the image
+        data = {live:null, image:detail.image, name:detail.name||card.name, tcgdexId:detail.id, source:'tcgdex-noprice'};
+      }
+    }
+  }catch(e){ console.log('[fetchCMPrice/tcgdex]', e.message); }
+
+  // ── Path B: Cardmarket URL scrape (fallback for promos + unlisted cards) ──
+  if((!data || !data.live) && card.cmUrl){
+    box.innerHTML='<span class="cm-icon">⟳</span><div>TCGdex has no price — trying Cardmarket URL…</div>';
+    const scraped = await fetchCMPriceFromUrl(card.cmUrl);
+    if(scraped?.price > 0){
+      data = {
+        live:  scraped.price,
+        trend: scraped.trend || null,
+        avg7:  scraped.avg7  || null,
+        avg30: scraped.avg30 || null,
+        low:   scraped.low   || null,
+        image: (data&&data.image) || null, // keep TCGdex image if we got one
+        name:  scraped.name  || card.name,
+        source:'cm-scrape'
+      };
+    }
+  }
+
+  if(data && data.live > 0){
+    _cmCache[card.id] = data;
+    _renderCMResult(data, card, box, imgWrap);
+    return;
+  }
+
+  // ── No price from either source — show clear fix instructions ─────────────
+  const hasImage = data?.image;
+  if(hasImage && imgWrap){
+    const img=new Image();
+    img.onload=()=>{ imgWrap.innerHTML=`<img src="${hasImage}/high.webp" style="width:100%;height:auto;border-radius:6px;display:block;" alt="${esc(card.name)}" />`; };
+    img.onerror=()=>{ imgWrap.innerHTML='<span style="font-family:DM Mono,monospace;font-size:9px;color:var(--text-dimmer);text-align:center;padding:8px;">no image</span>'; };
+    img.src = hasImage+'/high.webp';
+  } else if(imgWrap){
+    imgWrap.innerHTML='<span style="font-family:DM Mono,monospace;font-size:9px;color:var(--text-dimmer);text-align:center;padding:8px;">no image</span>';
+  }
+
+  const hasUrl = !!card.cmUrl;
+  box.className='cm-price-box flat';
+  box.style.display='block';
+  box.innerHTML=`<div class="cm-noprice-box">
+    <b>No price found</b> — this card isn't priced in TCGdex${hasUrl?' and the CM URL scrape returned no data':''}.
+    <br><br>
+    <b>Fix in 30 seconds:</b>
+    <br>① On <a href="${cmSearchUrl}" target="_blank" style="color:var(--blue)">cardmarket.com</a>, search "<b style="color:var(--text)">${esc(card.name)}</b>"
+    <br>② Click the <b>exact card listing</b> (not the set page or search results)
+    <br>③ Copy the URL from your browser — it should contain <code>/Singles/</code>
+    <br>④ Click <b style="color:var(--gold)">✏ Edit</b> above → paste URL into <b style="color:var(--gold)">Cardmarket URL</b> → Save
+    <br>⑤ Click <b style="color:var(--purple)">🔄 Re-fetch</b> — price will load from CM directly
+  </div>`;
 }
 
 function _renderCMResult(data,card,box,imgWrap){
@@ -2418,7 +2413,10 @@ function _renderCMResult(data,card,box,imgWrap){
     else if(diff<-10){cls='down';icon='📉';hdl=`${diff.toFixed(1)}% vs logged`;det=`€${live.toFixed(2)} · possible entry`;}
     else{cls='flat';icon='💹';hdl=`€${live.toFixed(2)} on Cardmarket`;det=`Within ${Math.abs(diff).toFixed(1)}% of your logged price`;}
     box.className='cm-price-box '+cls;
-    box.innerHTML=`<span class="cm-icon">${icon}</span><div><b>${hdl}</b><br><span style="opacity:0.8">${det}</span></div>`;
+    const srcLabel = data.source==='cm-scrape'
+      ? '<span style="font-family:DM Mono,monospace;font-size:9px;opacity:0.6;margin-left:6px;">via CM URL</span>'
+      : '';
+    box.innerHTML=`<span class="cm-icon">${icon}</span><div><b>${hdl}</b>${srcLabel}<br><span style="opacity:0.8">${det}</span></div>`;
     // History below
     const histEl=document.getElementById('m-cm-history');
     if(histEl){
@@ -2947,7 +2945,53 @@ document.addEventListener('mousedown',e=>{
   }
 });
 
-// ── NAME DROPDOWN + CONFIRM DIALOG ───────────────────────────────────────────
+function retryFetchCM(){
+  if(!_modalCardId) return;
+  const c = cards.find(x=>x.id===_modalCardId); if(!c) return;
+  delete _cmCache[c.id]; // force re-fetch
+  fetchCMPrice(c).catch(()=>{});
+}
+
+// Validate CM URL as user types in edit panel
+function onCmUrlInput(inp){
+  const hint = document.getElementById('edit-cm-url-hint');
+  const val = inp.value.trim();
+  if(!val){ hint.style.display='none'; return; }
+  hint.style.display='block';
+  if(val.includes('cardmarket.com') && val.includes('/Singles/')){
+    hint.className='cm-url-hint ok';
+    hint.textContent='✓ Looks like a valid singles page URL';
+  } else if(val.includes('cardmarket.com') && val.includes('/Search')){
+    hint.className='cm-url-hint err';
+    hint.textContent='✗ This is a search results URL — navigate to the specific card page first, then copy the URL';
+  } else if(val.includes('cardmarket.com')){
+    hint.className='cm-url-hint err';
+    hint.textContent='✗ Must link to a /Singles/ product page, not a set or search page';
+  } else {
+    hint.className='cm-url-hint err';
+    hint.textContent='✗ Must be a cardmarket.com URL';
+  }
+}
+
+// ── Scrape CM price from a direct product URL via Apps Script proxy ──────────
+// Apps Script fetches the page server-side (no CORS), we parse the price meta tag.
+async function fetchCMPriceFromUrl(cmUrl){
+  if(!cmUrl || !scriptUrl) return null;
+  const T = ms => new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),ms));
+  try{
+    const r = await Promise.race([
+      fetch(scriptUrl, {method:'POST', body: JSON.stringify({action:'cmScrape', url: cmUrl})}),
+      T(15000)
+    ]);
+    const j = await r.json();
+    if(j.error) throw new Error(j.error);
+    // Apps Script returns {price, avg7, avg30, trend, low, name}
+    return j.data || null;
+  }catch(e){
+    console.log('[cmScrape]', e.message);
+    return null;
+  }
+}
 let _confirmCallback = null;
 
 let _ddOpen = false;
@@ -2979,49 +3023,6 @@ function onCardNameInput(){
   dd.style.display='block';
 }
 function onCardNameKey(e){if(e.key==='Escape'){const dd=document.getElementById('name-dropdown');if(dd)dd.style.display='none';}}
-
-// ── TCGdex ID live hint for add form ─────────────────────────────────────────
-let _tcgdexHintTimer = null;
-let _tcgdexHintAbort = false;
-
-function scheduleAddFormTCGdexHint(){
-  clearTimeout(_tcgdexHintTimer);
-  _tcgdexHintTimer = setTimeout(fetchAddFormTCGdexHint, 700);
-}
-
-async function fetchAddFormTCGdexHint(){
-  const name = document.getElementById('in-name')?.value.trim();
-  const set  = document.getElementById('in-set')?.value.trim();
-  const variation = document.getElementById('in-variation')?.value;
-  const hint = document.getElementById('in-tcgdex-hint');
-  if(!hint) return;
-  if(!name || name.length < 2){ hint.style.display='none'; return; }
-
-  // Show loading state
-  hint.style.display='flex';  document.getElementById('in-tcgdex-id-val').textContent = '⟳ looking up…';
-  document.getElementById('in-tcgdex-id-val').style.color = 'var(--text-dimmer)';
-  document.getElementById('in-tcgdex-name-val').textContent = '';
-  document.getElementById('in-tcgdex-price-val').textContent = '';
-
-  try{
-    const res = await fetchCardFromTCGdex(name, set, variation, null);
-    if(!res){ hint.style.display='none'; return; }
-    const {detail, cm} = res;
-    document.getElementById('in-tcgdex-id-val').textContent = detail.id;
-    document.getElementById('in-tcgdex-id-val').style.color = 'var(--blue)';
-    document.getElementById('in-tcgdex-name-val').textContent = detail.name ? '· '+detail.name : '';
-    if(cm.price > 0){
-      document.getElementById('in-tcgdex-price-val').textContent = 'CM €'+cm.price.toFixed(2);
-      document.getElementById('in-tcgdex-price-val').style.color = 'var(--green)';
-    } else {
-      document.getElementById('in-tcgdex-price-val').textContent = 'no CM price';
-      document.getElementById('in-tcgdex-price-val').style.color = 'var(--text-dimmer)';
-    }
-    hint.style.display='flex';
-  }catch(e){
-    hint.style.display='none';
-  }
-}
 
 function onNameInput(){
   const val = document.getElementById('in-name').value.trim();
@@ -3958,6 +3959,46 @@ function doPost(e) {
         return respond({ data: JSON.parse(res.getContentText()) });
       } catch(err) {
         return respond({ error: 'TCGdex fetch failed: ' + err.message });
+      }
+    }
+    if (payload.action === 'cmScrape') {
+      try {
+        const url = payload.url;
+        if (!url || !url.includes('cardmarket.com')) return respond({ error: 'Not a Cardmarket URL' });
+        const res  = UrlFetchApp.fetch(url, {
+          muteHttpExceptions: true,
+          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; HoloTracker/1.0)' }
+        });
+        const code = res.getResponseCode();
+        if (code !== 200) return respond({ error: 'CM HTTP ' + code });
+        const html = res.getContentText();
+        let price = null, trend = null, avg7 = null, avg30 = null, low = null, name = null;
+        var m;
+        // 1. itemprop price meta tag
+        m = html.match(new RegExp('itemprop=.price.\\s+content=.([0-9.,]+).'));
+        if (m) price = parseFloat(m[1].replace(',', '.'));
+        // 2. averageSellPrice in JS bundle
+        if (!price) {
+          m = html.match(new RegExp('averageSellPrice.\\s*:\\s*([0-9.]+)'));
+          if (m) price = parseFloat(m[1]);
+        }
+        // 3. trendPrice
+        m = html.match(new RegExp('trendPrice.\\s*:\\s*([0-9.]+)'));
+        if (m) trend = parseFloat(m[1]);
+        // 4. avg7 / avg30 / lowPrice
+        m = html.match(new RegExp('[^a-z]avg7.\\s*:\\s*([0-9.]+)'));
+        if (m) avg7 = parseFloat(m[1]);
+        m = html.match(new RegExp('[^a-z]avg30.\\s*:\\s*([0-9.]+)'));
+        if (m) avg30 = parseFloat(m[1]);
+        m = html.match(new RegExp('lowPrice.\\s*:\\s*([0-9.]+)'));
+        if (m) low = parseFloat(m[1]);
+        // 5. Product name from og:title meta
+        m = html.match(new RegExp('og:title[^>]+content=.([^"\'<>]+)'));
+        if (m) name = m[1].replace(/\s*-\s*Cardmarket.*$/, '').trim();
+        if (!price) return respond({ error: 'Could not parse price from CM page — try a different card URL' });
+        return respond({ data: { price, trend, avg7, avg30, low, name } });
+      } catch(err) {
+        return respond({ error: 'CM scrape failed: ' + err.message });
       }
     }
     return respond({ error: 'Unknown action' });
