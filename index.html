@@ -1056,7 +1056,7 @@ function loadCMPricesFromCache(){
     _cmPrices = JSON.parse(raw);
     // Apply to cards
     cards.forEach(c=>{
-      if(_cmPrices[c.id]) c.cmLive = _cmPrices[c.id];
+      if(_cmPrices[c.id]?.price>0) c.cmLive = _cmPrices[c.id];
     });
   }catch(e){ console.log('[cm prices] load error',e.message); }
 }
@@ -1397,7 +1397,7 @@ async function loadSetsData(){
 async function saveCMPricesToSheet(){
   const rows = Object.entries(_cmPrices).map(([cardId,d])=>[
     cardId, d.tcgdexId||'', d.week||'', d.price||'',
-    d.trend||'', d.avg7||'', d.avg30||'', d.low||'', d.fetchedAt||''
+    d.trend||'', d.avg7||'', d.avg30||'', d.low||'', d.fetchedAt||'', d.eurRate||''
   ]);
   if(!rows.length) return;
   await fetch(scriptUrl,{method:'POST',body:JSON.stringify({action:'saveCMPrices',rows})});
@@ -1415,12 +1415,13 @@ function applyCMPrices(priceRows){
       avg7:    parseFloat(r[5])||null,
       avg30:   parseFloat(r[6])||null,
       low:     parseFloat(r[7])||null,
-      fetchedAt:parseInt(r[8])||0
+      fetchedAt:parseInt(r[8])||0,
+      eurRate: parseFloat(r[9])||null
     };
   });
-  // Apply to cards
+  // Apply to cards — only when price is valid
   cards.forEach(c=>{
-    if(_cmPrices[c.id]) c.cmLive = _cmPrices[c.id];
+    if(_cmPrices[c.id]?.price>0) c.cmLive = _cmPrices[c.id];
   });
   localStorage.setItem(PRICES_SHEET_KEY, JSON.stringify(_cmPrices));
 }
@@ -1431,7 +1432,7 @@ function applyCMPrices(priceRows){
   try{ cards = normaliseCards(JSON.parse(localStorage.getItem(KEY_CACHE)||'[]')); }catch{ cards=[]; }
   // Load weekly CM prices into cards before first render
   try{ _cmPrices=JSON.parse(localStorage.getItem(PRICES_SHEET_KEY)||'{}'); }catch{}
-  cards.forEach(c=>{ if(_cmPrices[c.id]) c.cmLive=_cmPrices[c.id]; });
+  cards.forEach(c=>{ if(_cmPrices[c.id]?.price>0) c.cmLive=_cmPrices[c.id]; });
   try{ sealed     = JSON.parse(localStorage.getItem(KEY_SCACHE) || '[]'); }catch{}
   try{ collection = JSON.parse(localStorage.getItem(KEY_COLL)    || '[]'); }catch{}
   render(); if(typeof renderSealed==='function') renderSealed();
@@ -1558,7 +1559,7 @@ async function loadSheet(){
     collection = data.collection || collection;
     // Apply weekly CM prices from Sheets
     if(data.cmPrices) applyCMPrices(data.cmPrices);
-    else { cards.forEach(c=>{ if(_cmPrices[c.id]) c.cmLive=_cmPrices[c.id]; }); }
+    else { cards.forEach(c=>{ if(_cmPrices[c.id]?.price>0) c.cmLive=_cmPrices[c.id]; }); }
     localStorage.setItem(KEY_CACHE,  JSON.stringify(cards));
     localStorage.setItem(KEY_SCACHE, JSON.stringify(sealed));
     localStorage.setItem(KEY_COLL,   JSON.stringify(collection));
@@ -1595,6 +1596,8 @@ async function saveCard(action, payload){
     cards      = data.cards      || cards;
     sealed     = data.sealed     || sealed;
     if(data.collection) collection = data.collection;
+    // Re-attach cmLive after server replaces the cards array
+    cards.forEach(c=>{ if(_cmPrices[c.id]?.price>0) c.cmLive=_cmPrices[c.id]; });
     localStorage.setItem(KEY_CACHE,  JSON.stringify(cards));
     localStorage.setItem(KEY_SCACHE, JSON.stringify(sealed));
     localStorage.setItem(KEY_COLL,   JSON.stringify(collection));
@@ -2345,8 +2348,8 @@ function getFiltered(){
 }
 
 function render(){
-  // Restore cmLive from _cmPrices cache — survives loadSheet() replacing the cards array
-  cards.forEach(c=>{ if(!c.cmLive && _cmPrices[c.id]?.price>0) c.cmLive = _cmPrices[c.id]; });
+  // Restore cmLive from _cmPrices cache — always sync so saveCard() replacements don't blank the column
+  cards.forEach(c=>{ if(_cmPrices[c.id]?.price>0) c.cmLive = _cmPrices[c.id]; });
   const allRows = getFiltered();
   const rows = showAll ? allRows : allRows.slice(0,20);
   document.getElementById('empty').style.display = allRows.length?'none':'block';
