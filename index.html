@@ -1284,6 +1284,7 @@ async function scheduleCMBgFetch(forceAll){
         const {detail, cm} = res;
         // Save tcgdexId for future lookups even if no price
         if(detail.id && !c.tcgdexId){ c.tcgdexId=detail.id; }
+        const eurRate = await fetchRateToCHF('EUR') || 1;
         const data = {
           price:    cm.price||null,
           trend:    cm.trend||null,
@@ -1293,6 +1294,7 @@ async function scheduleCMBgFetch(forceAll){
           image:    detail.image||null,
           tcgdexId: detail.id||null,
           fetchedAt: now,
+          eurRate:  eurRate,
         };
         _cmPrices[c.id] = data;
         if(cm.price > 0){
@@ -2034,9 +2036,7 @@ function buyZone(c){
 
   // 5. CM live price dipping below your logged average (market entry signal)
   if(c.cmLive?.price && avg > 0){
-    const cmP  = c.cmLive.price;
-    const chfRate = c.priceHistory.find(e=>e.rate&&e.rate>0)?.rate || 1;
-    const cmInCHF = cmP * chfRate; // approximate EUR→CHF conversion
+    const cmInCHF = _cmChf(c.cmLive);
     if(cmInCHF > 0 && cmInCHF < avg * 0.93){
       const pct = Math.round((avg - cmInCHF)/avg*100);
       reasons.push('CM live '+pct+'% below your avg');
@@ -2097,19 +2097,17 @@ function signal(c){
   // Price level
   if(avg>=100)s+=2; else if(avg>=30)s+=1;
 
-  // Live CM price signal boost — use when available
+  // Live CM price signal boost — use when available (compare CHF vs CHF)
   if(c.cmLive?.price){
-    const cmP  = c.cmLive.price;
-    const ref  = lp > 0 ? lp : avg; // compare against logged price, or avg
-    if(ref > 0){
-      const diff = (cmP - ref) / ref;
-      // CM trending up strongly vs logged = price rising on market
-      if(diff > 0.15)  s += 2;
-      else if(diff > 0.05) s += 1;
-      // CM trending down vs logged = possible dip entry
+    const cmChf = _cmChf(c.cmLive);
+    const ref   = lp > 0 ? lp : avg;
+    if(cmChf && ref > 0){
+      const diff = (cmChf - ref) / ref;
+      if(diff > 0.15)       s += 2;
+      else if(diff > 0.05)  s += 1;
       else if(diff < -0.10) s -= 1;
     }
-    // CM trend price rising = market momentum
+    // CM trend momentum (EUR ratios stay valid — no conversion needed)
     if(c.cmLive.trend && c.cmLive.avg7){
       const momentum = (c.cmLive.trend - c.cmLive.avg7) / c.cmLive.avg7;
       if(momentum > 0.05) s += 1;
@@ -2148,6 +2146,13 @@ function fmtDate(d){
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function tagHtml(g){ return `<span class="tag tag-${g||'other'}">${esc(GAMES[g]||g||'Other')}</span>`; }
 function badgeHtml(s){ return `<span class="badge ${s}"><span class="bdot"></span>${sigLabel(s)}</span>`; }
+
+// Convert CM EUR price to CHF using stored day-rate (falls back to live cache, then 1:1)
+function _cmChf(cm){
+  if(!cm||!cm.price) return null;
+  var rate = cm.eurRate || (_rateCache&&_rateCache['EUR']&&_rateCache['EUR'].rate) || 1;
+  return cm.price * rate;
+}
 
 // ── SET ID + AGE HELPERS ──────────────────────────────────────────────────────
 function _setIdFrom(setField){
@@ -2205,8 +2210,11 @@ function momentumBadge(c){
   if(!cm||!cm.price) return '';
   var lp = lastP(c);
   if(lp<=0) return '';
-  var diff = (cm.price - lp) / lp * 100;
-  var velocity = (cm.avg30&&cm.avg30>0) ? (cm.price - cm.avg30)/cm.avg30*100 : 0;
+  var chf = _cmChf(cm);
+  if(!chf) return '';
+  var diff = (chf - lp) / lp * 100;
+  var chfAvg30 = cm.avg30 ? cm.avg30 * (cm.eurRate||1) : chf;
+  var velocity = chfAvg30 > 0 ? (chf - chfAvg30) / chfAvg30 * 100 : 0;
   var cls,icon,label,tip;
   if(diff>18 && velocity>10){
     cls='stayaway'; icon='🔥'; label='STAY AWAY';
@@ -2369,15 +2377,17 @@ function render(){
       <td>${(()=>{
         const cm=c.cmLive;
         if(!cm?.price) return `<span style="color:var(--text-dimmer);font-size:10px">\u2014</span>`;
+        const chf=_cmChf(cm);
         const lp=lastP(c);
-        const diff=lp>0?((cm.price-lp)/lp*100):0;
+        const diff=lp>0?((chf-lp)/lp*100):0;
         const absDiff=Math.abs(diff);
         const priceCol=diff>5?'var(--green)':diff<-5?'var(--red)':'var(--text)';
         const pctCol=diff>5?'var(--green)':diff<-5?'var(--red)':'var(--text-dim)';
         const arrow=absDiff>=1?(diff>=0?'▲':'▼'):'';
         const pct=absDiff>=1?`<span style="color:${pctCol};font-family:DM Mono,monospace;font-size:9px;font-weight:600;">${arrow}${absDiff.toFixed(1)}%</span>`:'';
         return `<div style="display:flex;flex-direction:column;gap:1px;">
-          <span style="font-family:'Bebas Neue',sans-serif;font-size:18px;line-height:1;color:${priceCol}">\u20AC${cm.price.toFixed(2)}</span>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:18px;line-height:1;color:${priceCol}">CHF ${chf.toFixed(2)}</span>
+          <span style="font-family:DM Mono,monospace;font-size:8px;color:var(--text-dimmer);">\u20AC${cm.price.toFixed(2)} · ${(cm.eurRate||1).toFixed(4)}</span>
           ${pct}
           ${momentumBadge(c)}
         </div>`;
