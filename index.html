@@ -160,12 +160,12 @@ header{padding:28px 0 24px;display:flex;align-items:flex-end;justify-content:spa
 
 /* MOBILE CARDS */
 .mob-cards{display:none;}
-.mob-card{background:var(--card-bg);border:1px solid var(--border);border-radius:2px;padding:14px;margin-bottom:10px;cursor:pointer;animation:rowIn 0.3s ease both;}
+.mob-card{background:var(--card-bg);border:1px solid var(--border);border-radius:6px;padding:14px 14px 12px;margin-bottom:10px;cursor:pointer;animation:rowIn 0.3s ease both;-webkit-tap-highlight-color:transparent;}
 .mob-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;gap:8px;}
 .mob-name{font-weight:600;font-size:14px;color:var(--text);}
 .mob-set{font-family:DM Mono,monospace;font-size:10px;color:var(--text-dim);margin-top:2px;}
 .mob-note{font-family:DM Mono,monospace;font-size:10px;color:var(--text-dimmer);font-style:italic;margin-top:2px;}
-.mob-mid{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
+.mob-mid{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;min-height:28px;}
 .mob-price{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--gold);}
 .mob-info{font-family:DM Mono,monospace;font-size:10px;color:var(--text-dim);}
 .mob-bot{display:flex;justify-content:space-between;align-items:center;}
@@ -345,6 +345,7 @@ hr.div{border:none;border-top:1px solid var(--border);margin:36px 0;}
   .form-row2 .btn-add{grid-column:1/-1;}
   .desk-table{display:none;}
   .mob-cards{display:block;}
+  .btn-xs{min-height:32px;min-width:32px;padding:5px 10px;font-size:11px;}
 }
 </style>
 </head>
@@ -419,7 +420,6 @@ hr.div{border:none;border-top:1px solid var(--border);margin:36px 0;}
         <label>Card Name</label>
         <input type="text" id="in-name" placeholder="e.g. Charizard VMAX" autocomplete="off"
           oninput="onCardNameInput()" onkeydown="onCardNameKey(event)" />
-        <div id="name-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--card-bg);border:1px solid var(--border-bright);border-radius:0 0 2px 2px;z-index:50;max-height:160px;overflow-y:auto;"></div>
         <div id="name-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#16161f;border:1px solid #3d3d5c;border-top:none;border-radius:0 0 2px 2px;z-index:50;max-height:220px;overflow-y:auto;"></div>
       </div>
       <div class="ff"><label>Set / Set ID</label><input type="text" id="in-set" placeholder="type set name or ID…" autocomplete="off" /></div>
@@ -455,7 +455,7 @@ hr.div{border:none;border-top:1px solid var(--border);margin:36px 0;}
 
   <!-- CONTROLS -->
   <div class="controls">
-    <div class="search-wrap"><span class="search-icon">⌕</span><input type="text" id="in-search" placeholder="Search cards, notes…" oninput="renderCards()" /></div>
+    <div class="search-wrap"><span class="search-icon">⌕</span><input type="text" id="in-search" placeholder="Search cards, notes…" oninput="render()" /></div>
     <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
     <button class="filter-btn" onclick="setFilter('hot',this)">🔥 Hot</button>
     <button class="filter-btn" onclick="setFilter('warm',this)">⚡ Warm</button>
@@ -502,6 +502,12 @@ hr.div{border:none;border-top:1px solid var(--border);margin:36px 0;}
       <div class="chart-title">🎯 Signal Distribution</div>
       <div class="chart-canvas-wrap"><canvas id="chart-signals" class="chart-canvas"></canvas></div>
     </div>
+  </div>
+
+  <!-- PRICE STATUS BAR -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:6px;padding:0 2px;">
+    <span id="price-status" style="font-family:DM Mono,monospace;font-size:10px;color:var(--text-dimmer);"></span>
+    <button onclick="refreshPrices()" style="font-family:DM Mono,monospace;font-size:10px;padding:4px 12px;background:rgba(57,217,138,0.08);border:1px solid rgba(57,217,138,0.25);color:var(--green);border-radius:2px;cursor:pointer;white-space:nowrap;">↻ Refresh Prices</button>
   </div>
 
   <!-- DESKTOP TABLE -->
@@ -1043,234 +1049,229 @@ function isMonday(){ return new Date().getDay()===1; }
 // Apps Script calls TCGdex server-side — no browser CORS issues.
 // Falls back to direct fetch if no scriptUrl (offline mode).
 async function tcgdexFetch(url){
-  const timeout = ms => new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),ms));
-
-  // Prefer proxy via Apps Script (avoids CORS)
+  // Route through Apps Script proxy (no CORS). Falls back to direct fetch.
+  const T = ms => new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),ms));
   if(scriptUrl){
     try{
-      const res = await Promise.race([
-        fetch(scriptUrl, {method:'POST', body:JSON.stringify({action:'tcgdex', url})}),
-        timeout(12000)
+      const r = await Promise.race([
+        fetch(scriptUrl,{method:'POST',body:JSON.stringify({action:'tcgdex',url})}),
+        T(14000)
       ]);
-      const json = await res.json();
-      if(json.error) throw new Error(json.error);
-      return json.data; // already parsed
-    }catch(e){
-      console.log('[proxy] failed, trying direct:', e.message);
-    }
+      const j = await r.json();
+      if(j.error) throw new Error(j.error);
+      return j.data;
+    }catch(e){ console.log('[proxy]',e.message,url.slice(40)); }
   }
-
-  // Direct fetch fallback (works if CORS not blocked)
-  const res = await Promise.race([fetch(url), timeout(10000)]);
-  if(!res.ok) throw new Error('HTTP '+res.status);
-  return res.json();
+  // Direct fallback
+  const r = await Promise.race([fetch(url), T(10000)]);
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  return r.json();
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// TCGdex PRICE ENGINE — clean unified implementation
-// ═══════════════════════════════════════════════════════════════════
-
-// ── 1. Parse a Set field into {setId, localId} ───────────────────
-// Accepts:
-//   "sv03.5-199"   → setId=sv03.5  localId=199
-//   "svp-SV120"    → setId=svp     localId=SV120
-//   "sv03.5 199"   → setId=sv03.5  localId=199
-//   "199"          → setId=null    localId=199
+// ── Parse set field: "svp-SV120" → {setId:"svp", localId:"120"} ────
 function parseSetField(raw){
   const s = String(raw||'').trim();
-  if(!s) return {setId:null, localId:null};
-
-  let setId = null, localId = null;
-
-  // Space-separated: "sv03.5 199"
+  if(!s) return {setId:null,localId:null};
+  let setId=null, localId=null;
+  // Space: "sv03.5 199"
   const sp = s.indexOf(' ');
-  if(sp > 0){
-    setId  = s.slice(0,sp).toLowerCase();
-    localId = s.slice(sp+1).trim();
-  }
-  // Hyphen-separated: "svp-SV120", "sv03.5-199", "swshp-SWSH144"
+  if(sp>0){ setId=s.slice(0,sp).toLowerCase(); localId=s.slice(sp+1).trim(); }
   else {
+    // Hyphen: "svp-SV120" "sv03.5-199"
     const hy = s.lastIndexOf('-');
-    if(hy > 0){
-      const before = s.slice(0, hy);
-      const after  = s.slice(hy+1);
-      if(/^[a-zA-Z]/i.test(before) && after.length > 0){
-        setId  = before.toLowerCase();
-        localId = after;
-      }
+    if(hy>0){
+      const b=s.slice(0,hy), a=s.slice(hy+1);
+      if(/^[a-zA-Z]/i.test(b) && a.length>0){ setId=b.toLowerCase(); localId=a; }
     }
   }
-
   if(setId && localId){
-    // Strip leading letter-prefix from localId if it duplicates the set code
-    // e.g. svp-SV120 → localId "SV120" → strip "SV" → "120"
-    // e.g. swshp-SWSH144 → localId "SWSH144" → strip "SWSH" → "144"
-    // Rule: if localId starts with letters followed by digits,
-    //       and those letters (uppercased) appear in setId (uppercased),
-    //       strip the letters to get a clean numeric localId
-    const prefixMatch = localId.match(/^([A-Za-z]+)(\d+.*)$/);
-    if(prefixMatch){
-      const letterPart = prefixMatch[1].toUpperCase();
-      const numPart    = prefixMatch[2];
-      // Strip if the letter prefix is contained in the setId
-      if(setId.toUpperCase().includes(letterPart) || setId.toUpperCase().replace(/[^A-Z]/g,'').includes(letterPart)){
-        localId = numPart;
-      }
+    // Strip set-code letter prefix from localId: SV174→174, SWSH144→144, XY107→107
+    const m = localId.match(/^([A-Za-z]+)(\d+.*)$/);
+    if(m){
+      const lp=m[1].toUpperCase(), np=m[2];
+      const sid=setId.toUpperCase().replace(/[^A-Z]/g,'');
+      if(sid.includes(lp)||lp.includes(sid.slice(0,2))) localId=np;
     }
-    return {setId, localId};
+    return {setId,localId};
   }
-
-  // Fallback: pure number or standalone promo code
-  return {setId: null, localId: s};
+  return {setId:null, localId:s};
 }
 
-// ── 2. Parse CM pricing from a TCGdex card detail response ───────
-// Official format: detail.pricing.cardmarket.avg  (updated daily)
-// Legacy format:   detail.cardmarket.prices.averageSellPrice
+// ── Parse Cardmarket pricing from TCGdex card detail ────────────────
+// TCGdex format: detail.pricing.cardmarket.avg / avg-holo / trend / avg7 / avg30 / low
 function _parseCMPricing(detail, variation){
   const isHolo = ['holo','full-art','alt-art','special','sir'].includes(String(variation||'').toLowerCase());
-
-  // ── New format (detail.pricing.cardmarket) ──
   const nc = detail?.pricing?.cardmarket;
-  if(nc && typeof nc === 'object' && (nc.avg != null || nc['avg-holo'] != null)){
-    return {
-      price: isHolo ? (nc['avg-holo'] ?? nc.avg        ?? null) : (nc.avg         ?? null),
-      trend: isHolo ? (nc['trend-holo']?? nc.trend     ?? null) : (nc.trend       ?? null),
-      avg7:  isHolo ? (nc['avg7-holo'] ?? nc.avg7      ?? null) : (nc.avg7        ?? null),
-      avg30: isHolo ? (nc['avg30-holo']?? nc.avg30     ?? null) : (nc.avg30       ?? null),
-      low:   isHolo ? (nc['low-holo']  ?? nc.low       ?? null) : (nc.low         ?? null),
-      url:   nc.url ?? null
+  if(nc && typeof nc === 'object'){
+    const price = isHolo ? (nc['avg-holo']??nc.avg??null) : (nc.avg??null);
+    if(price > 0) return {
+      price,
+      trend: isHolo ? (nc['trend-holo']??nc.trend??null) : (nc.trend??null),
+      avg7:  isHolo ? (nc['avg7-holo'] ??nc.avg7 ??null) : (nc.avg7 ??null),
+      avg30: isHolo ? (nc['avg30-holo']??nc.avg30??null) : (nc.avg30??null),
+      low:   isHolo ? (nc['low-holo']  ??nc.low  ??null) : (nc.low  ??null),
     };
   }
-
-  // ── Legacy format (detail.cardmarket.prices or detail.cardmarket flat) ──
+  // Legacy: detail.cardmarket.prices.averageSellPrice
   const lc = detail?.cardmarket;
   if(lc){
     const p = lc.prices ?? lc;
-    return {
-      price: p.averageSellPrice ?? p.avg1 ?? p.avg ?? null,
-      trend: p.trendPrice       ?? p.trend         ?? null,
-      avg7:  p.avg7             ?? null,
-      avg30: p.avg30            ?? null,
-      low:   p.lowPrice         ?? p.low            ?? null,
-      url:   lc.url             ?? null
+    const price = p.averageSellPrice ?? p.avg1 ?? p.avg ?? null;
+    if(price > 0) return {
+      price,
+      trend: p.trendPrice??p.trend??null,
+      avg7:  p.avg7??null, avg30:p.avg30??null,
+      low:   p.lowPrice??p.low??null,
     };
   }
-
-  return {price:null, trend:null, avg7:null, avg30:null, low:null, url:null};
+  return {price:null,trend:null,avg7:null,avg30:null,low:null};
 }
 
-// ── 3. Fetch ONE card from TCGdex and return a price data object ──
-// Strategy A: direct /sets/{setId}/{localId} — exact, no ambiguity
-// Strategy B: name search with eq: filter — fallback
+// ── Fetch one card from TCGdex, return {detail, cm} ─────────────────
+// A: direct /sets/{setId}/{localId}   — fastest, exact
+// B: by saved tcgdexId                — second try
+// C: name search                      — last resort
 async function fetchCardFromTCGdex(name, setField, variation, tcgdexId){
-  // Strategy A: direct /sets/{setId}/{localId} — most precise
+  // A: direct endpoint
   const {setId, localId} = parseSetField(setField);
   if(setId && localId){
     try{
-      const url = `https://api.tcgdex.net/v2/en/sets/${encodeURIComponent(setId)}/${encodeURIComponent(localId)}`;
-      const d = await tcgdexFetch(url);
-      if(d?.id){
-        const cm = _parseCMPricing(d, variation);
-        return {detail:d, cm};
-      }
-    }catch(e){ console.log('[tcgdex/A]', name, setField, e.message); }
+      const d = await tcgdexFetch(`https://api.tcgdex.net/v2/en/sets/${encodeURIComponent(setId)}/${encodeURIComponent(localId)}`);
+      if(d?.id) return {detail:d, cm:_parseCMPricing(d,variation)};
+    }catch(e){ console.log('[A]',name,setField,'→',e.message); }
   }
-
-  // Strategy B: by saved tcgdexId
+  // B: by tcgdexId
   if(tcgdexId){
     try{
       const d = await tcgdexFetch(`https://api.tcgdex.net/v2/en/cards/${tcgdexId}`);
-      if(d?.id) return {detail:d, cm:_parseCMPricing(d, variation)};
-    }catch(e){ console.log('[tcgdex/B]', name, e.message); }
+      if(d?.id) return {detail:d, cm:_parseCMPricing(d,variation)};
+    }catch(e){ console.log('[B]',name,'→',e.message); }
   }
-
-  // Strategy C: exact name search (+ localId if available)
+  // C: name search
   if(name){
     try{
-      const nameQ = `name=eq:${encodeURIComponent(name)}`;
-      const numQ  = localId ? `&localId=eq:${encodeURIComponent(localId)}` : '';
-      const list  = await tcgdexFetch(
-        `https://api.tcgdex.net/v2/en/cards?${nameQ}${numQ}&pagination[itemsPerPage]=10`
-      );
+      const nq = `name=eq:${encodeURIComponent(name)}`;
+      const lq = localId ? `&localId=eq:${encodeURIComponent(localId)}` : '';
+      const list = await tcgdexFetch(`https://api.tcgdex.net/v2/en/cards?${nq}${lq}&pagination[itemsPerPage]=10`);
       if(!Array.isArray(list)||!list.length) throw new Error('not found');
-
-      // Pick best match for variation
       let match = list[0];
-      if(variation && list.length > 1){
-        const v = variation.toLowerCase();
+      if(variation && list.length>1){
+        const v=variation.toLowerCase();
         const found = list.find(x=>{
-          const r = String(x.rarity||'').toLowerCase();
-          if(v==='holo')      return r.includes('holo') && !r.includes('reverse');
+          const r=String(x.rarity||'').toLowerCase();
+          if(v==='holo')      return r.includes('holo')&&!r.includes('reverse');
           if(v==='reverse')   return r.includes('reverse');
-          if(v==='full-art')  return r.includes('full') || r.includes('ultra') || r.includes('illustration');
-          if(v==='alt-art')   return r.includes('special illustration') || r.includes('alt');
-          if(v==='normal')    return !r.includes('holo') && !r.includes('reverse');
+          if(v==='full-art')  return r.includes('full')||r.includes('illustration');
+          if(v==='alt-art')   return r.includes('special illustration')||r.includes('alt');
+          if(v==='normal')    return !r.includes('holo')&&!r.includes('reverse');
           return false;
         });
-        if(found) match = found;
+        if(found) match=found;
       }
-
       const d = await tcgdexFetch(`https://api.tcgdex.net/v2/en/cards/${match.id}`);
-      return {detail:d, cm:_parseCMPricing(d, variation)};
-    }catch(e){ console.log('[tcgdex/C]', name, e.message); }
+      if(d?.id) return {detail:d, cm:_parseCMPricing(d,variation)};
+    }catch(e){ console.log('[C]',name,'→',e.message); }
   }
-
-  return null; // all strategies failed
+  return null;
 }
 
-// ── 4. Weekly CM price snapshot (tracker cards) ──────────────────
-const CM_STALE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+// ── CM Price fetch — aggressive: retry anything without a GOOD price ─
+// "Good price" = fetched successfully AND price > 0 AND < 3 days old
+const CM_STALE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days — weekly schedule
 
-let _cmWeeklyRunning = false;
-async function scheduleCMBgFetch(){
-  if(_cmWeeklyRunning || !cards.length) return;
+let _cmFetchRunning = false;
+
+async function scheduleCMBgFetch(forceAll){
+  if(_cmFetchRunning) return;
+  if(!cards.length) return;
 
   const now = Date.now();
-  const toFetch = cards.filter(c=>
-    !_cmPrices[c.id] ||
-    !_cmPrices[c.id].fetchedAt ||
-    (now - _cmPrices[c.id].fetchedAt) > CM_STALE_MS
-  );
-  if(!toFetch.length) return;
+  const toFetch = cards.filter(c=>{
+    if(forceAll) return true;
+    const p = _cmPrices[c.id];
+    if(!p || !p.fetchedAt) return true;           // never fetched
+    if(!p.price || p.price <= 0) return true;     // fetched but got no price — retry
+    if((now - p.fetchedAt) > CM_STALE_MS) return true; // stale
+    return false;
+  });
 
-  _cmWeeklyRunning = true;
-  toast(`📡 Fetching CM prices for ${toFetch.length} card${toFetch.length>1?'s':''}…`, 'info', 5000);
-
-  let fetched=0, failed=0;
-  for(let i=0; i<toFetch.length; i+=3){
-    await Promise.all(toFetch.slice(i,i+3).map(async c=>{
-      try{
-        const res = await fetchCardFromTCGdex(c.name, c.set, c.variation, c.tcgdexId);
-        if(!res) throw new Error('no result');
-        const {detail, cm} = res;
-        if(!cm.price || cm.price <= 0) throw new Error('no price');
-        // Store tcgdexId for future direct lookups
-        if(detail.id && !c.tcgdexId) c.tcgdexId = detail.id;
-        const data = {
-          price: cm.price, trend: cm.trend, avg7: cm.avg7,
-          avg30: cm.avg30, low: cm.low,
-          image: detail.image||null,
-          tcgdexId: detail.id||null,
-          week: currentWeekKey(), fetchedAt: now
-        };
-        _cmPrices[c.id] = data;
-        c.cmLive = data;
-        fetched++;
-      }catch(e){
-        console.log('[cm/weekly]', c.name, c.set, '→', e.message);
-        failed++;
-      }
-    }));
-    if(i+3 < toFetch.length) await new Promise(r=>setTimeout(r,500));
+  if(!toFetch.length){
+    // All prices fresh — just apply them
+    cards.forEach(c=>{ if(_cmPrices[c.id]?.price>0) c.cmLive=_cmPrices[c.id]; });
+    render();
+    return;
   }
 
-  _cmWeeklyRunning = false;
+  _cmFetchRunning = true;
+  _updatePriceStatus(`Fetching prices: 0/${toFetch.length}…`);
+
+  let fetched=0, noPrice=0, failed=0;
+
+  for(let i=0; i<toFetch.length; i+=2){
+    const batch = toFetch.slice(i, i+2);
+    await Promise.all(batch.map(async c=>{
+      try{
+        const res = await fetchCardFromTCGdex(c.name, c.set, c.variation, c.tcgdexId);
+        if(!res) throw new Error('not found');
+        const {detail, cm} = res;
+        // Save tcgdexId for future lookups even if no price
+        if(detail.id && !c.tcgdexId){ c.tcgdexId=detail.id; }
+        const data = {
+          price:    cm.price||null,
+          trend:    cm.trend||null,
+          avg7:     cm.avg7||null,
+          avg30:    cm.avg30||null,
+          low:      cm.low||null,
+          image:    detail.image||null,
+          tcgdexId: detail.id||null,
+          fetchedAt: now,
+        };
+        _cmPrices[c.id] = data;
+        if(cm.price > 0){
+          c.cmLive = data;
+          fetched++;
+        } else {
+          noPrice++;
+          console.log('[no-price]',c.name,c.set,'— TCGdex has card but no CM data');
+        }
+      }catch(e){
+        // Mark as attempted so we don't retry immediately
+        _cmPrices[c.id] = {price:null, fetchedAt:now};
+        failed++;
+        console.log('[fail]',c.name,c.set,'→',e.message);
+      }
+    }));
+
+    // Progressive render every 6 cards + update status
+    if(i % 6 === 0){
+      render();
+      _updatePriceStatus(`Fetching prices: ${Math.min(i+2,toFetch.length)}/${toFetch.length}…`);
+    }
+    if(i+2 < toFetch.length) await new Promise(r=>setTimeout(r,300));
+  }
+
+  _cmFetchRunning = false;
   localStorage.setItem(PRICES_SHEET_KEY, JSON.stringify(_cmPrices));
   if(scriptUrl) saveCMPricesToSheet().catch(()=>{});
   render();
-  if(fetched) toast(`✅ CM prices: ${fetched} fetched${failed?', '+failed+' skipped':''}`, 'success', 4000);
-  else if(failed) toast('⚠ CM prices: all '+failed+' cards failed — check Set field format (e.g. svp SV120) or network connection', 'error', 7000);
+
+  const msg = fetched
+    ? `✅ ${fetched} prices fetched${noPrice?' · '+noPrice+' no CM data':''}${failed?' · '+failed+' errors':''}`
+    : `⚠ No prices found — ${noPrice} cards have no CM data on TCGdex${failed?' · '+failed+' errors':''}`;
+  _updatePriceStatus(fetched ? `${fetched}/${toFetch.length} prices` : `0 prices · ${failed+noPrice} skipped`);
+  toast(msg, fetched?'success':'error', 6000);
+}
+
+function _updatePriceStatus(msg){
+  const el = document.getElementById('price-status');
+  if(el) el.textContent = msg;
+}
+
+// Manual refresh — clear stale marks and re-fetch everything
+function refreshPrices(){
+  // Reset fetchedAt so everything re-fetches
+  Object.keys(_cmPrices).forEach(k=>{ _cmPrices[k].fetchedAt = 0; });
+  scheduleCMBgFetch();
 }
 
 // ── 5. Sets list loader ───────────────────────────────────────────
@@ -2113,73 +2114,9 @@ function getFiltered(){
   return f;
 }
 
-function renderCards(){
-  const q    = document.getElementById('in-search').value.toLowerCase();
-  const sort = document.getElementById('in-sort').value;
-  const gf   = document.getElementById('in-game-filter').value;
-  let allRows = cards.filter(c=>
-    (filter==='all'||signal(c)===filter||(filter==='buyzone'&&buyZone(c).score>0)) &&
-    (gf==='all'||c.game===gf) &&
-    (String(c.name||'').toLowerCase().includes(q)||String(c.notes||'').toLowerCase().includes(q)||String(c.set||'').toLowerCase().includes(q))
-  );
-  allRows.sort((a,b)=>{
-    if(a.pinned&&!b.pinned) return -1; if(!a.pinned&&b.pinned) return 1;
-    if(sort==='mentions') return b.mentions-a.mentions;
-    if(sort==='price-hi') return lastP(b)-lastP(a);
-    if(sort==='price-lo') return lastP(a)-lastP(b);
-    if(sort==='az') return a.name.localeCompare(b.name);
-    if(sort==='last-seen'){ const da=lastSeen(a)||'0000',db=lastSeen(b)||'0000'; return db.localeCompare(da); }
-    return b.id-a.id;
-  });
-  const rows = showAll ? allRows : allRows.slice(0,20);
-  document.getElementById('empty').style.display = allRows.length?'none':'block';
-  const smBtn=document.getElementById('show-more-btn');
-  if(smBtn){ smBtn.style.display=allRows.length>20?'block':'none'; if(allRows.length>20) smBtn.textContent=showAll?'▲ Show Top 20 Only':'▼ Show All '+allRows.length+' Cards'; }
-  const tb=document.getElementById('tbody'); tb.innerHTML='';
-  rows.forEach((c,i)=>{
-    const s=signal(c),lp=lastP(c);
-    const tr=document.createElement('tr');
-    tr.className='card-row'; tr.style.animationDelay=(i*0.03)+'s';
-    if(c.pinned) tr.classList.add('pinned');
-    tr.innerHTML=`
-      <td><button class="btn-star${c.pinned?' starred':''}" data-star="${c.id}">${c.pinned?'★':'☆'}</button></td>
-      <td><div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;"><span class="card-name">${esc(c.name)}</span><span class="card-set">${esc(String(c.set||''))}</span></div>${c.notes?'<div class="card-note-preview">📝 '+esc(c.notes)+'</div>':''}</td>
-      <td>${tagHtml(c.game)}</td>
-      <td>
-        <span class="price-val">${fmtCHF(lp)}</span>${c.target?'<span style="font-family:DM Mono,monospace;font-size:9px;margin-left:6px;color:'+(lp<=c.target?'var(--green)':'var(--text-dimmer)')+'">🎯'+fmtCHF(c.target)+'</span>':''}
-        ${(()=>{
-          if(!c.cmLive?.price) return '';
-          const approxCHF = c.cmLive.price * (c.priceHistory.find(e=>e.rate&&e.rate>0)?.rate||1);
-          const diff = lp>0 ? ((approxCHF-lp)/lp*100) : 0;
-          const col = diff>8?'var(--green)':diff<-8?'var(--red)':'var(--text-dimmer)';
-          const arrow = Math.abs(diff)>=3 ? ' '+(diff>=0?'▲':'▼')+Math.abs(diff).toFixed(0)+'%' : '';
-          return '<div style="font-family:DM Mono,monospace;font-size:9px;color:'+col+';margin-top:1px;">CM €'+c.cmLive.price.toFixed(2)+arrow+'</div>';
-        })()}
-      </td>
-      <td><div class="mentions-wrap"><span class="mentions-num">${c.mentions}</span><div class="mdots">${Array.from({length:5},(_,j)=>'<div class="mdot'+(j<c.mentions?' on':'')+'"></div>').join('')}</div></div></td>
-      <td>${lastSeenHtml(c)}</td>
-      <td><div style="display:flex;flex-direction:row;gap:4px;align-items:center;flex-wrap:wrap;">${badgeHtml(s)}${c.target&&lp<=c.target?'<span style="color:var(--green);font-size:10px">✅</span>':''}${buyZoneBadge(buyZone(c))}</div></td>
-      <td><div class="row-btns">${c.cmUrl?'<a href="'+c.cmUrl+'" target="_blank" class="btn-xs" onclick="event.stopPropagation()" style="background:rgba(57,217,138,0.08);border:1px solid rgba(57,217,138,0.35);color:var(--green);border-radius:2px;padding:3px 6px;font-family:DM Mono,monospace;font-size:10px;text-decoration:none;display:inline-flex;align-items:center;" title="Open on Cardmarket">🔗</a>':''}<button class="btn-xs btn-mention" data-id="${c.id}">+1</button><button class="btn-xs btn-unmention" data-unmention="${c.id}">−1</button><button class="btn-xs btn-edit-row" data-edit="${c.id}" style="background:rgba(245,200,66,0.08);border-color:rgba(245,200,66,0.25);color:var(--gold);">✎</button><button class="btn-xs btn-del" data-del="${c.id}">✕</button></div></td>`;
-    tr.querySelector('[data-star]').addEventListener('click',e=>{e.stopPropagation();togglePin(c.id);});
-    tr.querySelector('[data-edit]').addEventListener('click',e=>{e.stopPropagation();openModal(c.id);setTimeout(()=>{if(!document.getElementById('edit-panel').classList.contains('open'))toggleEditPanel();},100);});
-    tr.querySelector('[data-id]').addEventListener('click',e=>{e.stopPropagation();quickMention(e,c.id);});
-    tr.querySelector('[data-unmention]').addEventListener('click',e=>{e.stopPropagation();removeMention(e,c.id);});
-    tr.querySelector('[data-del]').addEventListener('click',e=>{e.stopPropagation();delCard(e,c.id);});
-    tr.addEventListener('click',()=>openModal(c.id));
-    tb.appendChild(tr);
-  });
-  const mob=document.getElementById('mob-wrap'); mob.innerHTML='';
-  rows.forEach((c,i)=>{
-    const s=signal(c),lp=lastP(c);
-    const div=document.createElement('div'); div.className='mob-card'; div.style.animationDelay=(i*0.03)+'s';
-    div.innerHTML=`<div class="mob-top"><div><div class="mob-name">${esc(c.name)}</div><div class="mob-set">${esc(String(c.set||''))}</div></div>${badgeHtml(s)}${buyZoneBadge(buyZone(c))}</div><div class="mob-mid"><span class="mob-price">${fmtCHF(lp)}</span>${c.cmLive?.price>0?`<span style="font-family:DM Mono,monospace;font-size:11px;color:var(--green);padding:1px 5px;border-radius:3px;background:rgba(57,217,138,0.1)">\u20AC${c.cmLive.price.toFixed(2)}</span>`:""}${tagHtml(c.game)}<span class="mob-info">${c.mentions} mention${c.mentions!==1?'s':''}</span></div><div class="mob-bot"><div style="display:flex;gap:8px"><button class="btn-xs btn-mention" onclick="quickMention(event,'${c.id}')">+1</button><button class="btn-xs btn-unmention" onclick="removeMention(event,'${c.id}')">−1</button><button class="btn-xs btn-del" onclick="delCard(event,'${c.id}')">✕</button></div></div>`;
-    div.onclick=e=>{if(!e.target.closest('button'))openModal(c.id);};
-    mob.appendChild(div);
-  });
-}
-
 function render(){
-  renderCards();
+  // Restore cmLive from _cmPrices cache — survives loadSheet() replacing the cards array
+  cards.forEach(c=>{ if(!c.cmLive && _cmPrices[c.id]?.price>0) c.cmLive = _cmPrices[c.id]; });
   const allRows = getFiltered();
   const rows = showAll ? allRows : allRows.slice(0,20);
   document.getElementById('empty').style.display = allRows.length?'none':'block';
