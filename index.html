@@ -1130,7 +1130,7 @@ async function tcgdexFetch(url){
 //   smp  = SM Black Star Promos  → localId keeps "SM" prefix: smp/SM120
 //   xyp  = XY Black Star Promos  → localId keeps "XY" prefix: xyp/XY120
 // Non-promo sets strip the letter prefix: sv03.5-199 → sv03.5/199
-const PROMO_SETS_KEEP_PREFIX = new Set(['swshp','smp','xyp','bwp']);
+var PROMO_SETS_KEEP_PREFIX = new Set(['swshp','smp','xyp','bwp']);
 function parseSetField(raw){
   const s = String(raw||'').trim();
   if(!s) return {setId:null,localId:null};
@@ -1249,7 +1249,7 @@ async function fetchCardFromTCGdex(name, setField, variation, tcgdexId){
 
 // ── CM Price fetch — aggressive: retry anything without a GOOD price ─
 // "Good price" = fetched successfully AND price > 0 AND < 3 days old
-const CM_STALE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days — weekly schedule
+var CM_STALE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days — weekly schedule
 
 let _cmFetchRunning = false;
 
@@ -2233,8 +2233,8 @@ function momentumBadge(c){
 }
 
 // ── AI TAKE ───────────────────────────────────────────────────────────────────
-const _aiTakeCache = {};
-const _aiTakePending = new Set();
+var _aiTakeCache = {};
+var _aiTakePending = new Set();
 
 function _buildAITakePrompt(c){
   const sig    = signal(c);
@@ -2517,7 +2517,7 @@ function renderPriceChart(c){
 }
 
 // ── LIVE PRICE via TCGdex (CORS-friendly, no key needed) ────────────────────
-const _cmCache = {};
+var _cmCache = {};
 async function fetchCMPrice(card){
   const box = document.getElementById('m-cm');
   const imgWrap = document.getElementById('m-card-img');
@@ -2799,7 +2799,7 @@ function getCollMarketPrice(name, set, variation, tcgdexId){
 }
 
 // ── condLabel helper ──────────────────────────────────────────────────────────
-const VAR_SHORT = {normal:'Non-holo',holo:'Holo',reverse:'Rev.','full-art':'FA','alt-art':'Alt Art',promo:'Promo',special:'SIR'};
+var VAR_SHORT = {normal:'Non-holo',holo:'Holo',reverse:'Rev.','full-art':'FA','alt-art':'Alt Art',promo:'Promo',special:'SIR'};
 function collCondLabel(item){
   return (CONDITIONS[item.condition]||item.condition||'Raw')
     +(item.rawCondition?' · '+(RAW_SHORT[item.rawCondition]||item.rawCondition):'')
@@ -3890,7 +3890,7 @@ function toast(msg,type='info',duration=2500){
 }
 
 // ── BUY ZONE NOTIFICATIONS ────────────────────────────────────────────────────
-const _notifiedIds = new Set();
+var _notifiedIds = new Set();
 function checkBuyZoneNotifications(){
   const newAlerts=[];
   cards.forEach(c=>{
