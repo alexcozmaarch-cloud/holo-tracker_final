@@ -1012,7 +1012,29 @@ const KEY_URL   = 'holo_url_v1';
 const KEY_CACHE  = 'holo_cache_v1';
 const KEY_SCACHE = 'holo_sealed_cache_v1';
 const STYPES = {'booster-box':'Booster Box',etb:'ETB',bundle:'Bundle',tin:'Tin',special:'Special'};
-const GAMES     = {pokemon:'Pokémon',onepiece:'One Piece',lorcana:'Lorcana',mtg:'MTG',yugioh:'Yu-Gi-Oh!',digimon:'Digimon',other:'Other'};
+const GAMES  = {pokemon:'Pokémon',onepiece:'One Piece',lorcana:'Lorcana',mtg:'MTG',yugioh:'Yu-Gi-Oh!',digimon:'Digimon',other:'Other'};
+
+// Known set release dates for age/novelty indicator
+const SET_RELEASE = {
+  'sv01':new Date('2023-03-31'),'sv02':new Date('2023-06-09'),'sv03':new Date('2023-09-22'),
+  'sv03.5':new Date('2023-10-06'),'sv04':new Date('2023-11-03'),'sv04.5':new Date('2023-12-08'),
+  'sv05':new Date('2024-01-26'),'sv06':new Date('2024-03-22'),'sv06.5':new Date('2024-05-24'),
+  'sv07':new Date('2024-07-19'),'sv07.5':new Date('2024-08-02'),'sv08':new Date('2024-11-01'),
+  'sv08.5':new Date('2024-11-08'),'sv09':new Date('2025-01-17'),'sv09.5':new Date('2025-03-28'),
+  'sv10':new Date('2025-05-30'),'sv11':new Date('2025-08-29'),'svp':new Date('2023-01-01'),
+  'swsh1':new Date('2020-02-07'),'swsh2':new Date('2020-05-01'),'swsh3':new Date('2020-08-14'),
+  'swsh3.5':new Date('2020-10-09'),'swsh4':new Date('2020-11-13'),'swsh4.5':new Date('2021-01-22'),
+  'swsh5':new Date('2021-03-19'),'swsh6':new Date('2021-06-18'),'swsh7':new Date('2021-08-27'),
+  'swsh7.5':new Date('2021-10-08'),'swsh8':new Date('2021-11-12'),'swsh9':new Date('2022-02-25'),
+  'swsh10':new Date('2022-05-27'),'swsh11':new Date('2022-09-09'),'swsh12':new Date('2022-11-11'),
+  'swsh12.5':new Date('2022-12-02'),'swshp':new Date('2020-01-01'),
+  'sm1':new Date('2017-02-03'),'sm2':new Date('2017-05-05'),'sm3':new Date('2017-08-04'),
+  'sm3.5':new Date('2017-10-06'),'sm4':new Date('2017-11-03'),'sm4.5':new Date('2018-02-02'),
+  'sm5':new Date('2018-04-06'),'sm6':new Date('2018-08-03'),'sm7':new Date('2018-11-02'),
+  'sm7.5':new Date('2018-12-07'),'sm8':new Date('2019-01-11'),'sm9':new Date('2019-04-05'),
+  'sm10':new Date('2019-07-12'),'sm11':new Date('2019-08-02'),'sm12':new Date('2020-01-17'),
+  'smp':new Date('2017-01-01'),
+};
 
 // ── STATE ────────────────────────────────────────────────────────────────────
 let scriptUrl  = localStorage.getItem(KEY_URL) || '';
@@ -2132,31 +2154,6 @@ function tagHtml(g){ return `<span class="tag tag-${g||'other'}">${esc(GAMES[g]|
 function badgeHtml(s){ return `<span class="badge ${s}"><span class="bdot"></span>${sigLabel(s)}</span>`; }
 
 // ── SET ID HELPERS ────────────────────────────────────────────────────────────
-// Known set release dates for age calculation (approximate)
-const SET_RELEASE = {
-  // SV era
-  'sv01':new Date('2023-03-31'),'sv02':new Date('2023-06-09'),'sv03':new Date('2023-09-22'),
-  'sv03.5':new Date('2023-10-06'),'sv04':new Date('2023-11-03'),'sv04.5':new Date('2023-12-08'),
-  'sv05':new Date('2024-01-26'),'sv06':new Date('2024-03-22'),'sv06.5':new Date('2024-05-24'),
-  'sv07':new Date('2024-07-19'),'sv07.5':new Date('2024-08-02'),'sv08':new Date('2024-11-01'),
-  'sv08.5':new Date('2024-11-08'),'sv09':new Date('2025-01-17'),'sv09.5':new Date('2025-03-28'),
-  'sv10':new Date('2025-05-30'),'sv11':new Date('2025-08-29'),
-  'svp':new Date('2023-01-01'),
-  // SWSH era
-  'swsh1':new Date('2020-02-07'),'swsh2':new Date('2020-05-01'),'swsh3':new Date('2020-08-14'),
-  'swsh3.5':new Date('2020-10-09'),'swsh4':new Date('2020-11-13'),'swsh4.5':new Date('2021-01-22'),
-  'swsh5':new Date('2021-03-19'),'swsh6':new Date('2021-06-18'),'swsh7':new Date('2021-08-27'),
-  'swsh7.5':new Date('2021-10-08'),'swsh8':new Date('2021-11-12'),'swsh9':new Date('2022-02-25'),
-  'swsh10':new Date('2022-05-27'),'swsh11':new Date('2022-09-09'),'swsh12':new Date('2022-11-11'),
-  'swsh12.5':new Date('2022-12-02'),'swshp':new Date('2020-01-01'),
-  // SM era
-  'sm1':new Date('2017-02-03'),'sm2':new Date('2017-05-05'),'sm3':new Date('2017-08-04'),
-  'sm3.5':new Date('2017-10-06'),'sm4':new Date('2017-11-03'),'sm4.5':new Date('2018-02-02'),
-  'sm5':new Date('2018-04-06'),'sm6':new Date('2018-08-03'),'sm7':new Date('2018-11-02'),
-  'sm7.5':new Date('2018-12-07'),'sm8':new Date('2019-01-11'),'sm9':new Date('2019-04-05'),
-  'sm10':new Date('2019-07-12'),'sm11':new Date('2019-08-02'),'sm12':new Date('2020-01-17'),
-  'smp':new Date('2017-01-01'),
-};
 
 function setIdFromField(setField){
   const {setId} = parseSetField(setField||'');
