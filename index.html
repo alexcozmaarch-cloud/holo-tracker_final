@@ -2155,11 +2155,12 @@ function render(){
         const lp=lastP(c);
         const diff=lp>0?((cm.price-lp)/lp*100):0;
         const absDiff=Math.abs(diff);
-        const diffCol=diff>5?'var(--green)':diff<-5?'var(--red)':'var(--text-dim)';
+        const priceCol=diff>5?'var(--green)':diff<-5?'var(--red)':'var(--text)';
+        const pctCol=diff>5?'var(--green)':diff<-5?'var(--red)':'var(--text-dim)';
         const arrow=absDiff>=1?(diff>=0?'▲':'▼'):'';
-        const pct=absDiff>=1?`<span style="color:${diffCol};font-size:9px;margin-left:3px;">${arrow}${absDiff.toFixed(1)}%</span>`:'';
+        const pct=absDiff>=1?`<span style="color:${pctCol};font-family:DM Mono,monospace;font-size:9px;font-weight:600;">${arrow}${absDiff.toFixed(1)}%</span>`:'';
         return `<div style="display:flex;flex-direction:column;gap:1px;">
-          <span style="font-family:DM Mono,monospace;font-size:11px;color:var(--green)">\u20AC${cm.price.toFixed(2)}</span>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:18px;line-height:1;color:${priceCol}">\u20AC${cm.price.toFixed(2)}</span>
           ${pct}
           ${cm.week?`<span style="font-family:DM Mono,monospace;font-size:8px;color:var(--text-dimmer);">${cm.week}</span>`:''}
         </div>`;
