@@ -246,16 +246,8 @@ hr.div{border:none;border-top:1px solid var(--border);margin:36px 0;}
 @keyframes spin{to{transform:rotate(360deg)}}
 /* BUY DIP badge */
 .badge.buydip{background:rgba(57,217,138,0.15);border:1px solid rgba(57,217,138,0.5);color:var(--green);}
-/* CM URL help block in edit panel */
-.cm-url-how{margin-top:6px;padding:8px 10px;background:rgba(245,200,66,0.05);border:1px solid rgba(245,200,66,0.15);border-left:2px solid rgba(245,200,66,0.5);border-radius:2px;font-family:DM Mono,monospace;font-size:10px;color:var(--text-dim);line-height:1.7;}
-.cm-url-how b{color:var(--gold);}
-.cm-url-hint{margin-top:5px;padding:5px 10px;border-radius:2px;font-family:DM Mono,monospace;font-size:10px;}
-.cm-url-hint.ok{background:rgba(57,217,138,0.08);border:1px solid rgba(57,217,138,0.25);color:var(--green);}
-.cm-url-hint.err{background:rgba(255,77,109,0.08);border:1px solid rgba(255,77,109,0.2);color:var(--red);}
-/* No-price callout in modal */
-.cm-noprice-box{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:2px;padding:12px 14px;font-family:DM Mono,monospace;font-size:11px;color:var(--text-dim);line-height:1.8;}
-.cm-noprice-box b{color:var(--gold);}
-.cm-noprice-box code{color:var(--blue);font-size:10px;}
+/* Modal price chart */
+.modal-chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:2px;padding:12px;margin-bottom:16px;}
 /* CardMarket live price */
 .cm-price-box{border-radius:2px;padding:10px 14px;margin-bottom:14px;font-family:DM Mono,monospace;font-size:11px;line-height:1.7;display:flex;align-items:flex-start;gap:10px;}
 .cm-price-box.up{background:rgba(57,217,138,0.08);border:1px solid rgba(57,217,138,0.3);color:var(--green);}
@@ -915,13 +907,8 @@ hr.div{border:none;border-top:1px solid var(--border);margin:36px 0;}
           <textarea id="edit-notes"></textarea>
         </div>
         <div class="edit-field" style="grid-column:1/-1;">
-          <label>🔗 Cardmarket URL <span style="color:var(--text-dimmer);font-size:9px;">— use for promos &amp; cards TCGdex can't price</span></label>
-          <input type="text" id="edit-cm-url" placeholder="https://www.cardmarket.com/en/Pokemon/Products/Singles/…" oninput="onCmUrlInput(this)" />
-          <div id="edit-cm-url-hint" class="cm-url-hint" style="display:none;"></div>
-          <div class="cm-url-how">
-            <b>How to get the URL:</b> go to cardmarket.com → search your card → open the <i>exact card listing page</i> (not the search results) → copy the URL from your browser address bar → paste it above.
-            <span style="color:var(--text-dimmer);">Example: <code style="color:var(--blue);font-size:9px;">cardmarket.com/en/Pokemon/Products/Singles/Scarlet-Violet-Promos/Pikachu-SVP-EN-001</code></span>
-          </div>
+          <label>🔗 Cardmarket Direct URL <span style="color:var(--text-dimmer);font-size:9px;">paste exact card page — sets the CM button link (prices come from TCGdex, not CM directly)</span></label>
+          <input type="text" id="edit-cm-url" placeholder="https://www.cardmarket.com/en/Pokemon/Products/Singles/…" />
         </div>
         <div class="edit-field">
           <label>TCGdex Card ID <span style="color:var(--text-dimmer);font-size:9px;">auto-filled or paste from tcgdex.net</span></label>
@@ -1229,25 +1216,23 @@ async function scheduleCMBgFetch(forceAll){
         const {detail, cm} = res;
         // Save tcgdexId for future lookups even if no price
         if(detail.id && !c.tcgdexId){ c.tcgdexId=detail.id; }
-        let price = cm.price||null, trend=cm.trend||null, avg7=cm.avg7||null, avg30=cm.avg30||null, low=cm.low||null;
-        // Fallback: scrape CM URL if TCGdex has no price but card has a cmUrl set
-        if(!price && c.cmUrl){
-          const scraped = await fetchCMPriceFromUrl(c.cmUrl);
-          if(scraped?.price > 0){ price=scraped.price; trend=scraped.trend; avg7=scraped.avg7; avg30=scraped.avg30; low=scraped.low; }
-        }
         const data = {
-          price, trend, avg7, avg30, low,
+          price:    cm.price||null,
+          trend:    cm.trend||null,
+          avg7:     cm.avg7||null,
+          avg30:    cm.avg30||null,
+          low:      cm.low||null,
           image:    detail.image||null,
           tcgdexId: detail.id||null,
           fetchedAt: now,
         };
         _cmPrices[c.id] = data;
-        if(price > 0){
+        if(cm.price > 0){
           c.cmLive = data;
           fetched++;
         } else {
           noPrice++;
-          console.log('[no-price]',c.name,c.set,'— no CM data from TCGdex or CM URL');
+          console.log('[no-price]',c.name,c.set,'— TCGdex has card but no CM data');
         }
       }catch(e){
         // Mark as attempted so we don't retry immediately
@@ -2164,7 +2149,21 @@ function render(){
         <span class="price-val">${fmtCHF(lp)}</span>
         ${c.target?`<span style="font-family:DM Mono,monospace;font-size:9px;margin-left:6px;color:${lp<=c.target?'var(--green)':'var(--text-dimmer)'}">🎯${fmtCHF(c.target)}</span>`:''}
       </td>
-      <td>${c.cmLive?.price>0?`<span style="font-family:DM Mono,monospace;font-size:11px;color:var(--green)">\u20AC${c.cmLive.price.toFixed(2)}</span>`:`<span style="color:var(--text-dimmer);font-size:10px">\u2014</span>`}</td>
+      <td>${(()=>{
+        const cm=c.cmLive;
+        if(!cm?.price) return `<span style="color:var(--text-dimmer);font-size:10px">\u2014</span>`;
+        const lp=lastP(c);
+        const diff=lp>0?((cm.price-lp)/lp*100):0;
+        const absDiff=Math.abs(diff);
+        const diffCol=diff>5?'var(--green)':diff<-5?'var(--red)':'var(--text-dim)';
+        const arrow=absDiff>=1?(diff>=0?'▲':'▼'):'';
+        const pct=absDiff>=1?`<span style="color:${diffCol};font-size:9px;margin-left:3px;">${arrow}${absDiff.toFixed(1)}%</span>`:'';
+        return `<div style="display:flex;flex-direction:column;gap:1px;">
+          <span style="font-family:DM Mono,monospace;font-size:11px;color:var(--green)">\u20AC${cm.price.toFixed(2)}</span>
+          ${pct}
+          ${cm.week?`<span style="font-family:DM Mono,monospace;font-size:8px;color:var(--text-dimmer);">${cm.week}</span>`:''}
+        </div>`;
+      })()}</td>
       <td><div class="mentions-wrap"><span class="mentions-num">${c.mentions}</span><div class="mdots">${c.mentions<=5?Array.from({length:c.mentions},()=>'<div class="mdot on"></div>').join('')+Array.from({length:5-c.mentions},()=>'<div class="mdot"></div>').join(''):Array.from({length:5},()=>'<div class="mdot on" style="background:var(--hot)"></div>').join('')+"<span style=\"font-family:DM Mono,monospace;font-size:9px;color:var(--hot);margin-left:3px\">+${c.mentions-5}</span>"}</div></div></td>
       <td>${lastSeenHtml(c)}</td>
       <td>
@@ -2302,92 +2301,66 @@ async function fetchCMPrice(card){
   const imgWrap = document.getElementById('m-card-img');
   if(!box) return;
 
-  box.style.display='flex';
-  box.className='cm-price-box loading';
-  box.innerHTML='<span class="cm-icon">⟳</span><div>Fetching live price…</div>';
-  if(imgWrap) imgWrap.innerHTML='<span style="font-family:DM Mono,monospace;font-size:9px;color:var(--text-dimmer);text-align:center;padding:8px;">loading…</span>';
-
-  // Set CM link immediately
+  // Set CM link immediately — always respect saved cmUrl if present
   const cmSearchUrl='https://www.cardmarket.com/en/Pokemon/Products/Search?searchString='+encodeURIComponent(card.name);
   const cmLink=document.getElementById('btn-cm-link');
   if(cmLink){
-    cmLink.href = card.cmUrl || cmSearchUrl;
-    cmLink.innerHTML = card.cmUrl ? '🔗 CM ✓' : '🔗 Cardmarket';
-    cmLink.style.color = card.cmUrl ? 'var(--green)' : '';
+    cmLink.href=card.cmUrl||cmSearchUrl;
+    cmLink.innerHTML=card.cmUrl?'🔗 Cardmarket ✓':'🔗 Cardmarket';
+    cmLink.style.color=card.cmUrl?'var(--green)':'';
   }
 
-  // Use in-memory cache to avoid re-fetching on repeated opens
-  if(_cmCache[card.id]){ _renderCMResult(_cmCache[card.id], card, box, imgWrap); return; }
+  // Show image placeholder immediately
+  if(imgWrap && imgWrap.innerHTML.includes('loading')){
+    imgWrap.innerHTML='<span style="font-family:DM Mono,monospace;font-size:9px;color:var(--text-dimmer);text-align:center;padding:8px;">loading…</span>';
+  }
 
-  let data = null;
+  // If weekly cache already rendered something useful, only update image + history rows — don't replace the price box with a spinner
+  const hasWeeklyData = box.className !== 'cm-price-box loading' && !box.className.includes('loading');
 
-  // ── Path A: TCGdex (free, no auth, covers most sets) ──────────────────────
+  if(_cmCache[card.id]){ _renderCMResult(_cmCache[card.id],card,box,imgWrap); return; }
+
+  // If we have no weekly data at all, show a minimal loading state (not a big spinner)
+  if(!hasWeeklyData){
+    box.style.display='flex';
+    box.className='cm-price-box loading';
+    box.innerHTML='<span class="cm-icon">⟳</span><div>Fetching live data…</div>';
+  }
+
   try{
     const tcgRes = await fetchCardFromTCGdex(card.name, card.set, card.variation, card.tcgdexId);
-    if(tcgRes){
-      const {detail, cm:cmParsed} = tcgRes;
-      if(cmLink && cmParsed.url && !card.cmUrl) cmLink.href='https://www.cardmarket.com'+cmParsed.url;
-      if(detail.id && !card.tcgdexId) card.tcgdexId = detail.id;
-      // Update TCGdex hint in edit panel if open
-      const hint=document.getElementById('edit-tcgdex-hint');
-      if(hint&&hint.isConnected&&detail.id) hint.innerHTML='✓ Linked to TCGdex: <b style="color:var(--green)">'+detail.id+'</b> · '+esc(detail.name||card.name);
-      if(cmParsed.price > 0){
-        data = {live:cmParsed.price, trend:cmParsed.trend, avg7:cmParsed.avg7, avg30:cmParsed.avg30, low:cmParsed.low, image:detail.image||null, name:detail.name||card.name, tcgdexId:detail.id, source:'tcgdex'};
-      } else if(detail.image){
-        // TCGdex found card but no CM price — still grab the image
-        data = {live:null, image:detail.image, name:detail.name||card.name, tcgdexId:detail.id, source:'tcgdex-noprice'};
-      }
+    if(!tcgRes) throw new Error('not found on TCGdex — check Set field (e.g. sv03.5 199)');
+
+    const {detail, cm:cmParsed} = tcgRes;
+    if(cmLink && cmParsed.url && !card.cmUrl) cmLink.href='https://www.cardmarket.com'+cmParsed.url;
+    if(detail.id && !card.tcgdexId) card.tcgdexId = detail.id;
+
+    const data={
+      live:  cmParsed.price,
+      trend: cmParsed.trend,
+      avg7:  cmParsed.avg7,
+      avg30: cmParsed.avg30,
+      low:   cmParsed.low,
+      image: detail.image||null,
+      name:  detail.name||card.name,
+      tcgdexId: detail.id
+    };
+    _cmCache[card.id]=data;
+    _renderCMResult(data,card,box,imgWrap);
+
+    // Update edit panel hint if open
+    const hint=document.getElementById('edit-tcgdex-hint');
+    if(hint&&hint.isConnected&&detail.id) hint.innerHTML='✓ Linked to TCGdex: <b style="color:var(--green)">'+detail.id+'</b> · '+esc(data.name);
+
+  }catch(err){
+    console.log('[fetchCMPrice]',err.message);
+    // Only show error state if weekly data wasn't already displayed
+    if(!hasWeeklyData){
+      box.className='cm-price-box flat';
+      box.innerHTML=`<span class="cm-icon">🔗</span><div>No live data — <a href="${cmSearchUrl}" target="_blank" style="color:var(--blue)">search Cardmarket</a><br><span style="font-family:DM Mono,monospace;font-size:9px;color:var(--text-dimmer);">Tip: set TCGdex ID in Edit for exact match</span></div>`;
     }
-  }catch(e){ console.log('[fetchCMPrice/tcgdex]', e.message); }
-
-  // ── Path B: Cardmarket URL scrape (fallback for promos + unlisted cards) ──
-  if((!data || !data.live) && card.cmUrl){
-    box.innerHTML='<span class="cm-icon">⟳</span><div>TCGdex has no price — trying Cardmarket URL…</div>';
-    const scraped = await fetchCMPriceFromUrl(card.cmUrl);
-    if(scraped?.price > 0){
-      data = {
-        live:  scraped.price,
-        trend: scraped.trend || null,
-        avg7:  scraped.avg7  || null,
-        avg30: scraped.avg30 || null,
-        low:   scraped.low   || null,
-        image: (data&&data.image) || null, // keep TCGdex image if we got one
-        name:  scraped.name  || card.name,
-        source:'cm-scrape'
-      };
-    }
+    if(imgWrap) imgWrap.innerHTML='<span style="font-family:DM Mono,monospace;font-size:9px;color:var(--text-dimmer);text-align:center;padding:8px;">no image</span>';
   }
-
-  if(data && data.live > 0){
-    _cmCache[card.id] = data;
-    _renderCMResult(data, card, box, imgWrap);
-    return;
-  }
-
-  // ── No price from either source — show clear fix instructions ─────────────
-  const hasImage = data?.image;
-  if(hasImage && imgWrap){
-    const img=new Image();
-    img.onload=()=>{ imgWrap.innerHTML=`<img src="${hasImage}/high.webp" style="width:100%;height:auto;border-radius:6px;display:block;" alt="${esc(card.name)}" />`; };
-    img.onerror=()=>{ imgWrap.innerHTML='<span style="font-family:DM Mono,monospace;font-size:9px;color:var(--text-dimmer);text-align:center;padding:8px;">no image</span>'; };
-    img.src = hasImage+'/high.webp';
-  } else if(imgWrap){
-    imgWrap.innerHTML='<span style="font-family:DM Mono,monospace;font-size:9px;color:var(--text-dimmer);text-align:center;padding:8px;">no image</span>';
-  }
-
-  const hasUrl = !!card.cmUrl;
-  box.className='cm-price-box flat';
-  box.style.display='block';
-  box.innerHTML=`<div class="cm-noprice-box">
-    <b>No price found</b> — this card isn't priced in TCGdex${hasUrl?' and the CM URL scrape returned no data':''}.
-    <br><br>
-    <b>Fix in 30 seconds:</b>
-    <br>① On <a href="${cmSearchUrl}" target="_blank" style="color:var(--blue)">cardmarket.com</a>, search "<b style="color:var(--text)">${esc(card.name)}</b>"
-    <br>② Click the <b>exact card listing</b> (not the set page or search results)
-    <br>③ Copy the URL from your browser — it should contain <code>/Singles/</code>
-    <br>④ Click <b style="color:var(--gold)">✏ Edit</b> above → paste URL into <b style="color:var(--gold)">Cardmarket URL</b> → Save
-    <br>⑤ Click <b style="color:var(--purple)">🔄 Re-fetch</b> — price will load from CM directly
-  </div>`;
 }
 
 function _renderCMResult(data,card,box,imgWrap){
@@ -2413,10 +2386,7 @@ function _renderCMResult(data,card,box,imgWrap){
     else if(diff<-10){cls='down';icon='📉';hdl=`${diff.toFixed(1)}% vs logged`;det=`€${live.toFixed(2)} · possible entry`;}
     else{cls='flat';icon='💹';hdl=`€${live.toFixed(2)} on Cardmarket`;det=`Within ${Math.abs(diff).toFixed(1)}% of your logged price`;}
     box.className='cm-price-box '+cls;
-    const srcLabel = data.source==='cm-scrape'
-      ? '<span style="font-family:DM Mono,monospace;font-size:9px;opacity:0.6;margin-left:6px;">via CM URL</span>'
-      : '';
-    box.innerHTML=`<span class="cm-icon">${icon}</span><div><b>${hdl}</b>${srcLabel}<br><span style="opacity:0.8">${det}</span></div>`;
+    box.innerHTML=`<span class="cm-icon">${icon}</span><div><b>${hdl}</b><br><span style="opacity:0.8">${det}</span></div>`;
     // History below
     const histEl=document.getElementById('m-cm-history');
     if(histEl){
@@ -2450,18 +2420,24 @@ function _renderCMResult(data,card,box,imgWrap){
 // Render weekly CM snapshot data into the modal price section
 function _renderWeeklyCMInModal(c){
   const data = _cmPrices[c.id];
-  if(!data?.price) return; // no weekly data yet
+  if(!data?.price){
+    // No weekly data — show minimal loading placeholder (fetchCMPrice will replace)
+    const box = document.getElementById('m-cm');
+    if(box){ box.className='cm-price-box loading'; box.innerHTML='<span class="cm-icon">⟳</span><div>Fetching…</div>'; }
+    return;
+  }
 
-  // Populate m-cm box with weekly data
+  // Populate m-cm box with weekly data + delta
   const box = document.getElementById('m-cm');
   if(box){
     const lp = lastP(c);
     const diff = lp>0 ? ((data.price-lp)/lp*100) : 0;
-    const diffStr = Math.abs(diff)>=1 ? (diff>=0?' ▲':' ▼')+Math.abs(diff).toFixed(1)+'%' : '';
+    const absDiff = Math.abs(diff);
+    const diffStr = absDiff>=1 ? (diff>=0?' <span style="color:var(--green)">▲':' <span style="color:var(--red)">▼')+absDiff.toFixed(1)+'%</span>' : '';
     const col = diff>8?'var(--green)':diff<-8?'var(--red)':'var(--text)';
     box.className='cm-price-box flat';
     box.innerHTML=`<span class="cm-icon">📊</span><div>
-      <b style="color:${col}">€${data.price.toFixed(2)}${diffStr}</b> Cardmarket avg
+      <b style="color:${col}">€${data.price.toFixed(2)}</b>${diffStr} Cardmarket avg
       <br><span style="opacity:0.7;font-size:10px;">Weekly snapshot · ${data.week||'—'}</span>
     </div>`;
   }
@@ -2945,53 +2921,7 @@ document.addEventListener('mousedown',e=>{
   }
 });
 
-function retryFetchCM(){
-  if(!_modalCardId) return;
-  const c = cards.find(x=>x.id===_modalCardId); if(!c) return;
-  delete _cmCache[c.id]; // force re-fetch
-  fetchCMPrice(c).catch(()=>{});
-}
-
-// Validate CM URL as user types in edit panel
-function onCmUrlInput(inp){
-  const hint = document.getElementById('edit-cm-url-hint');
-  const val = inp.value.trim();
-  if(!val){ hint.style.display='none'; return; }
-  hint.style.display='block';
-  if(val.includes('cardmarket.com') && val.includes('/Singles/')){
-    hint.className='cm-url-hint ok';
-    hint.textContent='✓ Looks like a valid singles page URL';
-  } else if(val.includes('cardmarket.com') && val.includes('/Search')){
-    hint.className='cm-url-hint err';
-    hint.textContent='✗ This is a search results URL — navigate to the specific card page first, then copy the URL';
-  } else if(val.includes('cardmarket.com')){
-    hint.className='cm-url-hint err';
-    hint.textContent='✗ Must link to a /Singles/ product page, not a set or search page';
-  } else {
-    hint.className='cm-url-hint err';
-    hint.textContent='✗ Must be a cardmarket.com URL';
-  }
-}
-
-// ── Scrape CM price from a direct product URL via Apps Script proxy ──────────
-// Apps Script fetches the page server-side (no CORS), we parse the price meta tag.
-async function fetchCMPriceFromUrl(cmUrl){
-  if(!cmUrl || !scriptUrl) return null;
-  const T = ms => new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),ms));
-  try{
-    const r = await Promise.race([
-      fetch(scriptUrl, {method:'POST', body: JSON.stringify({action:'cmScrape', url: cmUrl})}),
-      T(15000)
-    ]);
-    const j = await r.json();
-    if(j.error) throw new Error(j.error);
-    // Apps Script returns {price, avg7, avg30, trend, low, name}
-    return j.data || null;
-  }catch(e){
-    console.log('[cmScrape]', e.message);
-    return null;
-  }
-}
+// ── NAME DROPDOWN + CONFIRM DIALOG ───────────────────────────────────────────
 let _confirmCallback = null;
 
 let _ddOpen = false;
@@ -3171,15 +3101,19 @@ async function openModal(id){
     document.getElementById('m-target-label').textContent='No target set';
   }
   document.getElementById('modal').style.display='flex';
-  // Set Cardmarket search link for this card
+  // Set Cardmarket link — prefer saved exact URL, fall back to search
   const cmLink = document.getElementById('btn-cm-link');
-  if(cmLink) cmLink.href = 'https://www.cardmarket.com/en/Pokemon/Products/Search?searchString='+encodeURIComponent(c.name);
+  if(cmLink){
+    cmLink.href = c.cmUrl || 'https://www.cardmarket.com/en/Pokemon/Products/Search?searchString='+encodeURIComponent(c.name);
+    cmLink.innerHTML = c.cmUrl ? '🔗 Cardmarket ✓' : '🔗 Cardmarket';
+    cmLink.style.color = c.cmUrl ? 'var(--green)' : '';
+  }
   document.getElementById('m-cm').style.display='flex';
   // Show cached weekly CM price immediately (instant, no network)
   _renderWeeklyCMInModal(c);
   // Render price chart after modal is fully visible
   setTimeout(()=>renderPriceChart(c), 150);
-  // Then fetch fresh live price from TCGdex (overwrites weekly cache display)
+  // Then fetch fresh live price from TCGdex (upgrades display if successful)
   fetchCMPrice(c).catch(()=>{});
 
   const ai=document.getElementById('m-ai');
@@ -3259,10 +3193,19 @@ async function saveEdit(){
     const noteEl = document.getElementById('m-note');
     if(c.notes){ noteEl.textContent='📝 '+c.notes; noteEl.style.display='block'; }
     else noteEl.style.display='none';
+    // Refresh CM link with saved URL or search fallback
+    const cmLink = document.getElementById('btn-cm-link');
+    if(cmLink){
+      cmLink.href = c.cmUrl || 'https://www.cardmarket.com/en/Pokemon/Products/Search?searchString='+encodeURIComponent(c.name);
+      cmLink.innerHTML = c.cmUrl ? '🔗 Cardmarket ✓' : '🔗 Cardmarket';
+      cmLink.style.color = c.cmUrl ? 'var(--green)' : '';
+    }
     document.getElementById('edit-panel').classList.remove('open');
     document.getElementById('btn-edit-card').textContent = '✏ Edit';
     render();
     toast('Card updated ✓','success');
+    // Re-fetch CM price with updated settings
+    fetchCMPrice(c).catch(()=>{});
   }
 }
 
@@ -3959,46 +3902,6 @@ function doPost(e) {
         return respond({ data: JSON.parse(res.getContentText()) });
       } catch(err) {
         return respond({ error: 'TCGdex fetch failed: ' + err.message });
-      }
-    }
-    if (payload.action === 'cmScrape') {
-      try {
-        const url = payload.url;
-        if (!url || !url.includes('cardmarket.com')) return respond({ error: 'Not a Cardmarket URL' });
-        const res  = UrlFetchApp.fetch(url, {
-          muteHttpExceptions: true,
-          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; HoloTracker/1.0)' }
-        });
-        const code = res.getResponseCode();
-        if (code !== 200) return respond({ error: 'CM HTTP ' + code });
-        const html = res.getContentText();
-        let price = null, trend = null, avg7 = null, avg30 = null, low = null, name = null;
-        var m;
-        // 1. itemprop price meta tag
-        m = html.match(new RegExp('itemprop=.price.\\s+content=.([0-9.,]+).'));
-        if (m) price = parseFloat(m[1].replace(',', '.'));
-        // 2. averageSellPrice in JS bundle
-        if (!price) {
-          m = html.match(new RegExp('averageSellPrice.\\s*:\\s*([0-9.]+)'));
-          if (m) price = parseFloat(m[1]);
-        }
-        // 3. trendPrice
-        m = html.match(new RegExp('trendPrice.\\s*:\\s*([0-9.]+)'));
-        if (m) trend = parseFloat(m[1]);
-        // 4. avg7 / avg30 / lowPrice
-        m = html.match(new RegExp('[^a-z]avg7.\\s*:\\s*([0-9.]+)'));
-        if (m) avg7 = parseFloat(m[1]);
-        m = html.match(new RegExp('[^a-z]avg30.\\s*:\\s*([0-9.]+)'));
-        if (m) avg30 = parseFloat(m[1]);
-        m = html.match(new RegExp('lowPrice.\\s*:\\s*([0-9.]+)'));
-        if (m) low = parseFloat(m[1]);
-        // 5. Product name from og:title meta
-        m = html.match(new RegExp('og:title[^>]+content=.([^"\'<>]+)'));
-        if (m) name = m[1].replace(/\s*-\s*Cardmarket.*$/, '').trim();
-        if (!price) return respond({ error: 'Could not parse price from CM page — try a different card URL' });
-        return respond({ data: { price, trend, avg7, avg30, low, name } });
-      } catch(err) {
-        return respond({ error: 'CM scrape failed: ' + err.message });
       }
     }
     return respond({ error: 'Unknown action' });
