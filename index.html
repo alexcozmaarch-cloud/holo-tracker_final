@@ -1611,8 +1611,8 @@ async function saveCard(action, payload){
 // Fetched once on startup, cached in localStorage for 7 days.
 // Enables set name autocomplete on all Set fields.
 
-const SETS_CACHE_KEY = 'holo_tcgdex_sets_v1';
-const SETS_CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
+var SETS_CACHE_KEY = 'holo_tcgdex_sets_v1';
+var SETS_CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
 let _setsData = []; // [{id, name, releaseDate, cardCount}]
 
 function deriveSeries(id){
@@ -1709,8 +1709,8 @@ function wireAllSetAutocompletes(){
 }
 
 // ── CURRENCY CONVERSION — cached, dual-source, 5s timeout ──────────────────
-const _rateCache = {}; // { 'EUR': {rate:1.02, ts:1234567890} }
-const RATE_TTL   = 60 * 60 * 1000; // 1 hour
+var _rateCache = {}; // { 'EUR': {rate:1.02, ts:1234567890} }
+var RATE_TTL   = 60 * 60 * 1000; // 1 hour
 
 async function fetchRateToCHF(fromCurrency){
   if(!fromCurrency || fromCurrency==='CHF') return 1;
@@ -2524,7 +2524,7 @@ function renderPriceChart(c){
 }
 
 // ── LIVE PRICE via TCGdex (CORS-friendly, no key needed) ────────────────────
-const _cmCache = {};
+var _cmCache = {};
 async function fetchCMPrice(card){
   const box = document.getElementById('m-cm');
   const imgWrap = document.getElementById('m-card-img');
@@ -2768,7 +2768,7 @@ function updateCollMarket(){
 }
 
 // ── Collection market price cache (independent of tracker) ──────────────────
-const _collMktCache = {}; // key = "name|||set|||variation"
+var _collMktCache = {}; // key = "name|||set|||variation"
 
 async function fetchCollMarketPrice(name, set, variation, tcgdexId){
   const key = [name, set, variation||''].join('|||');
@@ -2806,7 +2806,7 @@ function getCollMarketPrice(name, set, variation, tcgdexId){
 }
 
 // ── condLabel helper ──────────────────────────────────────────────────────────
-const VAR_SHORT = {normal:'Non-holo',holo:'Holo',reverse:'Rev.','full-art':'FA','alt-art':'Alt Art',promo:'Promo',special:'SIR'};
+var VAR_SHORT = {normal:'Non-holo',holo:'Holo',reverse:'Rev.','full-art':'FA','alt-art':'Alt Art',promo:'Promo',special:'SIR'};
 function collCondLabel(item){
   return (CONDITIONS[item.condition]||item.condition||'Raw')
     +(item.rawCondition?' · '+(RAW_SHORT[item.rawCondition]||item.rawCondition):'')
@@ -3886,7 +3886,7 @@ function toast(msg,type='info',duration=2500){
 }
 
 // ── BUY ZONE NOTIFICATIONS ────────────────────────────────────────────────────
-const _notifiedIds = new Set();
+var _notifiedIds = new Set();
 function checkBuyZoneNotifications(){
   const newAlerts=[];
   cards.forEach(c=>{
