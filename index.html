@@ -54,7 +54,7 @@ header{padding:28px 0 24px;display:flex;align-items:flex-end;justify-content:spa
 .add-section::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--purple),var(--gold),var(--blue));}
 .section-label{font-family:DM Mono,monospace;font-size:10px;letter-spacing:0.2em;color:var(--purple);text-transform:uppercase;margin-bottom:14px;}
 .form-row1{display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px;margin-bottom:10px;}
-.form-row2{display:grid;grid-template-columns:1fr 2fr auto;gap:10px;align-items:end;}
+.form-row2{display:grid;grid-template-columns:1fr 1fr 2fr auto;gap:10px;align-items:end;}
 .ff{display:flex;flex-direction:column;gap:5px;}
 .ff label{font-family:DM Mono,monospace;font-size:10px;letter-spacing:0.12em;color:var(--text-dim);text-transform:uppercase;}
 .ff input,.ff select,.ff textarea{background:var(--surface);border:1px solid var(--border);border-radius:2px;padding:9px 12px;color:var(--text);font-family:DM Mono,monospace;font-size:12px;outline:none;width:100%;}
@@ -244,8 +244,26 @@ hr.div{border:none;border-top:1px solid var(--border);margin:36px 0;}
 .saving-box{background:#16161f;border:1px solid #3d3d5c;border-radius:2px;padding:20px 32px;display:flex;align-items:center;gap:14px;font-family:DM Mono,monospace;font-size:13px;color:#e8e8f0;}
 .saving-spinner{width:18px;height:18px;border:2px solid #2a2a3a;border-top-color:#b77fff;border-radius:50%;animation:spin 0.7s linear infinite;flex-shrink:0;}
 @keyframes spin{to{transform:rotate(360deg)}}
-/* BUY DIP badge */
-.badge.buydip{background:rgba(57,217,138,0.15);border:1px solid rgba(57,217,138,0.5);color:var(--green);}
+.cm-hist-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--border);}
+.cm-hist-row:last-child{border-bottom:none;}
+
+/* Market price cell */
+.mkt-cell-price{font-family:'Bebas Neue',sans-serif;font-size:18px;line-height:1;}
+.mkt-cell-delta{font-family:DM Mono,monospace;font-size:9px;margin-left:3px;vertical-align:middle;}
+.mkt-cell-week{font-family:DM Mono,monospace;font-size:9px;color:var(--text-dimmer);margin-top:1px;}
+
+/* Price fetch shimmer */
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+.price-shimmer{display:inline-block;width:52px;height:14px;border-radius:2px;background:linear-gradient(90deg,var(--border) 25%,var(--border-bright) 50%,var(--border) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;}
+
+/* TCGdex hint row */
+#in-tcgdex-hint{border-left:2px solid rgba(77,159,255,0.5);}
+.tcgdex-hint-bar{margin-top:8px;padding:7px 12px;background:rgba(77,159,255,0.06);border:1px solid rgba(77,159,255,0.2);border-left:2px solid rgba(77,159,255,0.5);border-radius:2px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+
+/* Tighten table column for Actions */
+.cards-table th:last-child,.cards-table td:last-child{width:120px;}
+/* Market column — don't shrink */
+.cards-table th:nth-child(5),.cards-table td:nth-child(5){white-space:nowrap;min-width:90px;}
 /* Modal price chart */
 .modal-chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:2px;padding:12px;margin-bottom:16px;}
 /* CardMarket live price */
@@ -419,7 +437,7 @@ hr.div{border:none;border-top:1px solid var(--border);margin:36px 0;}
       <div class="ff" style="position:relative;">
         <label>Card Name</label>
         <input type="text" id="in-name" placeholder="e.g. Charizard VMAX" autocomplete="off"
-          oninput="onCardNameInput()" onkeydown="onCardNameKey(event)" />
+          oninput="onCardNameInput();scheduleAddFormTCGdexHint()" onkeydown="onCardNameKey(event)" />
         <div id="name-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#16161f;border:1px solid #3d3d5c;border-top:none;border-radius:0 0 2px 2px;z-index:50;max-height:220px;overflow-y:auto;"></div>
       </div>
       <div class="ff"><label>Set / Set ID</label><input type="text" id="in-set" placeholder="type set name or ID…" autocomplete="off" /></div>
@@ -448,8 +466,27 @@ hr.div{border:none;border-top:1px solid var(--border);margin:36px 0;}
           <option value="other">Other</option>
         </select>
       </div>
+      <div class="ff">
+        <label>Variation <span style="color:var(--text-dimmer);font-size:9px;">affects CM price picked</span></label>
+        <select id="in-variation">
+          <option value="">Auto-detect</option>
+          <option value="normal">Normal</option>
+          <option value="holo">Holo</option>
+          <option value="reverse">Reverse Holo</option>
+          <option value="full-art">Full Art</option>
+          <option value="alt-art">Alt Art / SIR</option>
+          <option value="promo">Promo</option>
+        </select>
+      </div>
       <div class="ff"><label>Notes (YouTuber, reason…)</label><textarea id="in-notes" placeholder="e.g. Heard on TCC Collector, hype around reprint…"></textarea></div>
       <button class="btn-add" id="btn-add" onclick="addCard()">ADD</button>
+    </div>
+    <!-- TCGdex ID hint — auto-populated when name+set resolve -->
+    <div id="in-tcgdex-hint" class="tcgdex-hint-bar" style="display:none;">
+      <span style="font-family:DM Mono,monospace;font-size:10px;color:var(--text-dim);">TCGdex ID:</span>
+      <span id="in-tcgdex-id-val" style="font-family:DM Mono,monospace;font-size:11px;color:var(--blue);font-weight:500;"></span>
+      <span id="in-tcgdex-name-val" style="font-family:DM Mono,monospace;font-size:10px;color:var(--text-dimmer);"></span>
+      <span id="in-tcgdex-price-val" style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:var(--green);margin-left:auto;"></span>
     </div>
   </div>
 
@@ -465,7 +502,6 @@ hr.div{border:none;border-top:1px solid var(--border);margin:36px 0;}
     <select class="ctrl-select" id="in-sort" onchange="render()">
       <option value="mentions">Most Mentioned</option>
       <option value="new">Newest</option>
-      <option value="mentions">Most Mentioned</option>
       <option value="price-hi">Highest Price</option>
       <option value="price-lo">Lowest Price</option>
       <option value="az">A–Z</option>
@@ -505,15 +541,15 @@ hr.div{border:none;border-top:1px solid var(--border);margin:36px 0;}
   </div>
 
   <!-- PRICE STATUS BAR -->
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:6px;padding:0 2px;">
-    <span id="price-status" style="font-family:DM Mono,monospace;font-size:10px;color:var(--text-dimmer);"></span>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px;padding:6px 10px;background:var(--card-bg);border:1px solid var(--border);border-radius:2px;">
+    <span id="price-status" style="font-family:DM Mono,monospace;font-size:10px;color:var(--text-dimmer);">Prices load automatically on startup</span>
     <button onclick="refreshPrices()" style="font-family:DM Mono,monospace;font-size:10px;padding:4px 12px;background:rgba(57,217,138,0.08);border:1px solid rgba(57,217,138,0.25);color:var(--green);border-radius:2px;cursor:pointer;white-space:nowrap;">↻ Refresh Prices</button>
   </div>
 
   <!-- DESKTOP TABLE -->
   <div class="desk-table">
     <table class="cards-table">
-      <thead><tr><th></th><th>Card · Set · Notes</th><th>Game</th><th>Last Price</th><th>Market</th><th>Mentions</th><th>Last Seen</th><th>Signal</th><th></th></tr></thead>
+      <thead><tr><th></th><th>Card · Set · Notes</th><th>Game</th><th>Last Price</th><th style="color:var(--green)">CM Market</th><th>Mentions</th><th>Last Seen</th><th>Signal</th><th></th></tr></thead>
       <tbody id="tbody"></tbody>
     </table>
   </div>
@@ -1517,9 +1553,11 @@ async function saveCard(action, payload){
     try{ data=JSON.parse(rawText); }
     catch{ throw new Error('Bad response: '+rawText.slice(0,100)); }
     if(data.error) throw new Error(data.error);
-    cards      = data.cards      || cards;
+    cards      = normaliseCards(data.cards || cards);
     sealed     = data.sealed     || sealed;
     if(data.collection) collection = data.collection;
+    // Re-apply CM prices — server response replaces the cards array and loses cmLive refs
+    cards.forEach(c=>{ if(!c.cmLive && _cmPrices[c.id]?.price>0) c.cmLive=_cmPrices[c.id]; });
     localStorage.setItem(KEY_CACHE,  JSON.stringify(cards));
     localStorage.setItem(KEY_SCACHE, JSON.stringify(sealed));
     localStorage.setItem(KEY_COLL,   JSON.stringify(collection));
@@ -1633,7 +1671,7 @@ function wireSetAutocomplete(inputId, afterSelect){
 function wireAllSetAutocompletes(){
   // Only wire the always-visible fields at startup
   // Modal fields (edit-set, cedit-set) wired when their modal opens
-  wireSetAutocomplete('in-set');
+  wireSetAutocomplete('in-set', ()=>{ scheduleAddFormTCGdexHint(); });
   wireSetAutocomplete('s-set');
   wireSetAutocomplete('coll-set', ()=>{ updateCollMarket(); });
 }
@@ -1737,12 +1775,13 @@ function fmtPrice(amount, currency){
 
 // ── ADD CARD ─────────────────────────────────────────────────────────────────
 async function addCard(){
-  const name     = document.getElementById('in-name').value.trim();
-  const set      = document.getElementById('in-set').value.trim();
-  const rawPrice = parseFloat(document.getElementById('in-price').value);
-  const currency = document.getElementById('in-currency').value;
-  const game     = document.getElementById('in-game').value;
-  const notes    = document.getElementById('in-notes').value.trim();
+  const name      = document.getElementById('in-name').value.trim();
+  const set       = document.getElementById('in-set').value.trim();
+  const rawPrice  = parseFloat(document.getElementById('in-price').value);
+  const currency  = document.getElementById('in-currency').value;
+  const game      = document.getElementById('in-game').value;
+  const notes     = document.getElementById('in-notes').value.trim();
+  const variation = document.getElementById('in-variation')?.value || '';
 
   if(!name){ toast('Enter a card name','info'); return; }
 
@@ -1780,7 +1819,7 @@ async function addCard(){
     if(ok) toast('+1 mention for "'+ex.name+'"'+(priceInCHF>0?' · '+fmtCHF(priceInCHF)+(entry?.carriedForward?' (last known)':''):''), 'success');
   } else {
     const priceHistory = entry ? [entry] : [];
-    const card = {id:Date.now().toString(), name, set:set||'—', game, notes, firstSeen:today, mentions:1, priceHistory};
+    const card = {id:Date.now().toString(), name, set:set||'—', game, notes, variation:variation||null, firstSeen:today, mentions:1, priceHistory};
     ok = await saveCard('upsert',{card});
     if(ok) toast('"'+name+'" added'+(priceInCHF>0?' · '+fmtCHF(priceInCHF):''), 'success');
   }
@@ -1789,6 +1828,8 @@ async function addCard(){
   if(ok){
     render();
     ['in-name','in-set','in-price','in-notes'].forEach(id=>document.getElementById(id).value='');
+    const varEl = document.getElementById('in-variation'); if(varEl) varEl.value='';
+    const hintEl = document.getElementById('in-tcgdex-hint'); if(hintEl) hintEl.style.display='none';
     document.getElementById('in-name').focus();
   }
 }
@@ -2149,7 +2190,21 @@ function render(){
         <span class="price-val">${fmtCHF(lp)}</span>
         ${c.target?`<span style="font-family:DM Mono,monospace;font-size:9px;margin-left:6px;color:${lp<=c.target?'var(--green)':'var(--text-dimmer)'}">🎯${fmtCHF(c.target)}</span>`:''}
       </td>
-      <td>${c.cmLive?.price>0?`<span style="font-family:DM Mono,monospace;font-size:11px;color:var(--green)">\u20AC${c.cmLive.price.toFixed(2)}</span>`:`<span style="color:var(--text-dimmer);font-size:10px">\u2014</span>`}</td>
+      <td>${(()=>{
+        if(c.cmLive?.price > 0){
+          const p = c.cmLive.price;
+          const lp = lastP(c);
+          const diff = lp>0 ? ((p - lp)/lp*100) : 0;
+          const col = diff > 8 ? 'var(--green)' : diff < -8 ? 'var(--red)' : 'var(--text)';
+          const arrow = Math.abs(diff)>=2 ? `<span class="mkt-cell-delta" style="color:${col}">${diff>=0?'▲':'▼'}${Math.abs(diff).toFixed(0)}%</span>` : '';
+          const week = c.cmLive.week ? `<div class="mkt-cell-week">${c.cmLive.week}</div>` : '';
+          return `<span class="mkt-cell-price" style="color:${col}">€${p.toFixed(2)}</span>${arrow}${week}`;
+        }
+        // Show shimmer if a fetch is in progress, dash if nothing
+        return _cmFetchRunning
+          ? '<span class="price-shimmer"></span>'
+          : '<span style="color:var(--text-dimmer);font-family:DM Mono,monospace;font-size:10px;">—</span>';
+      })()}</td>
       <td><div class="mentions-wrap"><span class="mentions-num">${c.mentions}</span><div class="mdots">${c.mentions<=5?Array.from({length:c.mentions},()=>'<div class="mdot on"></div>').join('')+Array.from({length:5-c.mentions},()=>'<div class="mdot"></div>').join(''):Array.from({length:5},()=>'<div class="mdot on" style="background:var(--hot)"></div>').join('')+"<span style=\"font-family:DM Mono,monospace;font-size:9px;color:var(--hot);margin-left:3px\">+${c.mentions-5}</span>"}</div></div></td>
       <td>${lastSeenHtml(c)}</td>
       <td>
@@ -2177,7 +2232,7 @@ function render(){
     div.className='mob-card'; div.style.animationDelay=(i*0.03)+'s';
     div.innerHTML=`
       <div class="mob-top"><div><div class="mob-name">${esc(c.name)}</div><div class="mob-set">${esc(c.set)}</div>${c.notes?`<div class="mob-note">📝 ${esc(c.notes)}</div>`:''}</div>${badgeHtml(s)}${buyZoneBadge(buyZone(c))}</div>
-      <div class="mob-mid"><span class="mob-price">${fmtCHF(lp)}</span>${tagHtml(c.game)}<span class="mob-info">${c.mentions} mention${c.mentions!==1?'s':''}</span><span class="mob-info">${fmtDate(c.firstSeen)}</span></div>
+      <div class="mob-mid"><span class="mob-price">${fmtCHF(lp)}</span>${c.cmLive?.price>0?`<span style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--green);padding:1px 7px;border-radius:2px;background:rgba(57,217,138,0.1);border:1px solid rgba(57,217,138,0.2);">€${c.cmLive.price.toFixed(2)}</span>`:''}${tagHtml(c.game)}<span class="mob-info">${c.mentions} mention${c.mentions!==1?'s':''}</span></div>
       <div class="mob-bot"><div style="display:flex;gap:8px"><button class="btn-xs btn-mention" onclick="quickMention(event,'${c.id}')">+1</button><button class="btn-xs btn-unmention" onclick="removeMention(event,'${c.id}')">−1</button><button class="btn-xs btn-del" onclick="delCard(event,'${c.id}')">✕</button></div></div>`;
     div.onclick=e=>{if(!e.target.closest('button'))openModal(c.id);};
     mob.appendChild(div);
@@ -2924,6 +2979,49 @@ function onCardNameInput(){
   dd.style.display='block';
 }
 function onCardNameKey(e){if(e.key==='Escape'){const dd=document.getElementById('name-dropdown');if(dd)dd.style.display='none';}}
+
+// ── TCGdex ID live hint for add form ─────────────────────────────────────────
+let _tcgdexHintTimer = null;
+let _tcgdexHintAbort = false;
+
+function scheduleAddFormTCGdexHint(){
+  clearTimeout(_tcgdexHintTimer);
+  _tcgdexHintTimer = setTimeout(fetchAddFormTCGdexHint, 700);
+}
+
+async function fetchAddFormTCGdexHint(){
+  const name = document.getElementById('in-name')?.value.trim();
+  const set  = document.getElementById('in-set')?.value.trim();
+  const variation = document.getElementById('in-variation')?.value;
+  const hint = document.getElementById('in-tcgdex-hint');
+  if(!hint) return;
+  if(!name || name.length < 2){ hint.style.display='none'; return; }
+
+  // Show loading state
+  hint.style.display='flex';  document.getElementById('in-tcgdex-id-val').textContent = '⟳ looking up…';
+  document.getElementById('in-tcgdex-id-val').style.color = 'var(--text-dimmer)';
+  document.getElementById('in-tcgdex-name-val').textContent = '';
+  document.getElementById('in-tcgdex-price-val').textContent = '';
+
+  try{
+    const res = await fetchCardFromTCGdex(name, set, variation, null);
+    if(!res){ hint.style.display='none'; return; }
+    const {detail, cm} = res;
+    document.getElementById('in-tcgdex-id-val').textContent = detail.id;
+    document.getElementById('in-tcgdex-id-val').style.color = 'var(--blue)';
+    document.getElementById('in-tcgdex-name-val').textContent = detail.name ? '· '+detail.name : '';
+    if(cm.price > 0){
+      document.getElementById('in-tcgdex-price-val').textContent = 'CM €'+cm.price.toFixed(2);
+      document.getElementById('in-tcgdex-price-val').style.color = 'var(--green)';
+    } else {
+      document.getElementById('in-tcgdex-price-val').textContent = 'no CM price';
+      document.getElementById('in-tcgdex-price-val').style.color = 'var(--text-dimmer)';
+    }
+    hint.style.display='flex';
+  }catch(e){
+    hint.style.display='none';
+  }
+}
 
 function onNameInput(){
   const val = document.getElementById('in-name').value.trim();
