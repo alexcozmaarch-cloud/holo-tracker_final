@@ -113,35 +113,6 @@ header{padding:28px 0 24px;display:flex;align-items:flex-end;justify-content:spa
 .badge.hot .bdot{animation:bdp 1.2s infinite;}
 .badge.cold .bdot{animation:none;}
 @keyframes bdp{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(0.6)}}
-/* MOMENTUM BADGE */
-.mbadge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:2px;font-family:DM Mono,monospace;font-size:9px;text-transform:uppercase;white-space:nowrap;letter-spacing:0.05em;font-weight:600;margin-top:3px;}
-.mbadge.rocket{background:rgba(57,217,138,0.18);border:1px solid rgba(57,217,138,0.55);color:#39d98a;}
-.mbadge.climbing{background:rgba(77,159,255,0.12);border:1px solid rgba(77,159,255,0.4);color:#4d9fff;}
-.mbadge.flat{background:rgba(122,122,154,0.08);border:1px solid rgba(122,122,154,0.18);color:var(--text-dimmer);}
-.mbadge.dip{background:rgba(245,200,66,0.12);border:1px solid rgba(245,200,66,0.45);color:#f5c842;}
-.mbadge.drop{background:rgba(255,77,109,0.1);border:1px solid rgba(255,77,109,0.35);color:#ff4d6d;}
-.mbadge.stayaway{background:rgba(255,107,53,0.12);border:1px solid rgba(255,107,53,0.4);color:var(--hot);}
-/* SET ID COLUMN */
-.set-id-badge{display:inline-block;padding:2px 8px;border-radius:2px;font-family:DM Mono,monospace;font-size:10px;font-weight:600;letter-spacing:0.08em;white-space:nowrap;cursor:default;}
-.set-id-sv{background:rgba(183,127,255,0.15);border:1px solid rgba(183,127,255,0.4);color:#b77fff;}
-.set-id-swsh{background:rgba(77,159,255,0.12);border:1px solid rgba(77,159,255,0.35);color:#4d9fff;}
-.set-id-sm{background:rgba(57,217,138,0.1);border:1px solid rgba(57,217,138,0.3);color:#39d98a;}
-.set-id-xy{background:rgba(255,152,0,0.1);border:1px solid rgba(255,152,0,0.35);color:#ff9800;}
-.set-id-bw{background:rgba(245,200,66,0.1);border:1px solid rgba(245,200,66,0.3);color:#f5c842;}
-.set-id-promo{background:rgba(255,77,109,0.1);border:1px solid rgba(255,77,109,0.35);color:#ff4d6d;}
-.set-id-other{background:var(--surface);border:1px solid var(--border);color:var(--text-dim);}
-.set-age-pip{display:inline-block;width:5px;height:5px;border-radius:50%;margin-left:5px;vertical-align:middle;flex-shrink:0;}
-.set-age-new{background:#39d98a;box-shadow:0 0 4px #39d98a99;}
-.set-age-recent{background:#4d9fff;}
-.set-age-mid{background:#f5c842;}
-.set-age-old{background:#44445a;}
-/* AI TAKE CELL */
-.ai-take{font-family:DM Mono,monospace;font-size:9px;line-height:1.5;max-width:140px;cursor:default;}
-.ai-take.loading{color:var(--text-dimmer);font-style:italic;}
-.ai-take.bullish{color:#39d98a;}
-.ai-take.bearish{color:#ff4d6d;}
-.ai-take.neutral{color:#7a7a9a;}
-.ai-take.caution{color:#f5c842;}
 .row-btns{display:flex;gap:6px;opacity:0;transition:opacity 0.15s;}
 .card-row:hover .row-btns{opacity:1;}
 .btn-xs{border-radius:2px;padding:3px 8px;font-family:DM Mono,monospace;font-size:10px;cursor:pointer;border:1px solid;}
@@ -451,7 +422,7 @@ hr.div{border:none;border-top:1px solid var(--border);margin:36px 0;}
           oninput="onCardNameInput()" onkeydown="onCardNameKey(event)" />
         <div id="name-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#16161f;border:1px solid #3d3d5c;border-top:none;border-radius:0 0 2px 2px;z-index:50;max-height:220px;overflow-y:auto;"></div>
       </div>
-      <div class="ff"><label>Set / Set ID <span style="color:var(--text-dimmer);font-size:9px;">Promos: svp-120 · swshp-SV144 · smp-SM120</span></label><input type="text" id="in-set" placeholder="e.g. sv03.5 or svp-120" autocomplete="off" /></div>
+      <div class="ff"><label>Set / Set ID</label><input type="text" id="in-set" placeholder="type set name or ID…" autocomplete="off" /></div>
       <div class="ff">
         <label>Price &amp; Currency</label>
         <div style="display:flex;gap:6px;">
@@ -542,7 +513,7 @@ hr.div{border:none;border-top:1px solid var(--border);margin:36px 0;}
   <!-- DESKTOP TABLE -->
   <div class="desk-table">
     <table class="cards-table">
-      <thead><tr><th></th><th>Card · Notes</th><th>Game</th><th>Set ID</th><th>Last Price</th><th>Market · Momentum</th><th>Mentions</th><th>Last Seen</th><th>Signal</th><th>AI Take</th><th></th></tr></thead>
+      <thead><tr><th></th><th>Card · Set · Notes</th><th>Game</th><th>Last Price</th><th>Market</th><th>Mentions</th><th>Last Seen</th><th>Signal</th><th></th></tr></thead>
       <tbody id="tbody"></tbody>
     </table>
   </div>
@@ -997,12 +968,8 @@ hr.div{border:none;border-top:1px solid var(--border);margin:36px 0;}
     <div id="m-prices"></div>
 
     <!-- AI take -->
-    <div class="modal-sec" style="margin-top:18px;display:flex;align-items:center;justify-content:space-between;">
-      <span>🤖 AI Investment Take</span>
-      <button id="m-ai-refresh" onclick="refreshModalAI()" style="background:none;border:1px solid var(--border);border-radius:2px;padding:2px 8px;color:var(--text-dim);font-family:DM Mono,monospace;font-size:9px;cursor:pointer;letter-spacing:0.05em;">↻ Refresh</button>
-    </div>
-    <div class="ai-box" id="m-ai" style="min-height:48px;"></div>
-    <div id="m-momentum-row" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;"></div>
+    <div class="modal-sec" style="margin-top:18px;">🤖 AI Investment Take</div>
+    <div class="ai-box" id="m-ai"></div>
   </div>
 </div>
 
@@ -1012,29 +979,7 @@ const KEY_URL   = 'holo_url_v1';
 const KEY_CACHE  = 'holo_cache_v1';
 const KEY_SCACHE = 'holo_sealed_cache_v1';
 const STYPES = {'booster-box':'Booster Box',etb:'ETB',bundle:'Bundle',tin:'Tin',special:'Special'};
-const GAMES  = {pokemon:'Pokémon',onepiece:'One Piece',lorcana:'Lorcana',mtg:'MTG',yugioh:'Yu-Gi-Oh!',digimon:'Digimon',other:'Other'};
-
-// Known set release dates for age/novelty indicator
-const SET_RELEASE = {
-  'sv01':new Date('2023-03-31'),'sv02':new Date('2023-06-09'),'sv03':new Date('2023-09-22'),
-  'sv03.5':new Date('2023-10-06'),'sv04':new Date('2023-11-03'),'sv04.5':new Date('2023-12-08'),
-  'sv05':new Date('2024-01-26'),'sv06':new Date('2024-03-22'),'sv06.5':new Date('2024-05-24'),
-  'sv07':new Date('2024-07-19'),'sv07.5':new Date('2024-08-02'),'sv08':new Date('2024-11-01'),
-  'sv08.5':new Date('2024-11-08'),'sv09':new Date('2025-01-17'),'sv09.5':new Date('2025-03-28'),
-  'sv10':new Date('2025-05-30'),'sv11':new Date('2025-08-29'),'svp':new Date('2023-01-01'),
-  'swsh1':new Date('2020-02-07'),'swsh2':new Date('2020-05-01'),'swsh3':new Date('2020-08-14'),
-  'swsh3.5':new Date('2020-10-09'),'swsh4':new Date('2020-11-13'),'swsh4.5':new Date('2021-01-22'),
-  'swsh5':new Date('2021-03-19'),'swsh6':new Date('2021-06-18'),'swsh7':new Date('2021-08-27'),
-  'swsh7.5':new Date('2021-10-08'),'swsh8':new Date('2021-11-12'),'swsh9':new Date('2022-02-25'),
-  'swsh10':new Date('2022-05-27'),'swsh11':new Date('2022-09-09'),'swsh12':new Date('2022-11-11'),
-  'swsh12.5':new Date('2022-12-02'),'swshp':new Date('2020-01-01'),
-  'sm1':new Date('2017-02-03'),'sm2':new Date('2017-05-05'),'sm3':new Date('2017-08-04'),
-  'sm3.5':new Date('2017-10-06'),'sm4':new Date('2017-11-03'),'sm4.5':new Date('2018-02-02'),
-  'sm5':new Date('2018-04-06'),'sm6':new Date('2018-08-03'),'sm7':new Date('2018-11-02'),
-  'sm7.5':new Date('2018-12-07'),'sm8':new Date('2019-01-11'),'sm9':new Date('2019-04-05'),
-  'sm10':new Date('2019-07-12'),'sm11':new Date('2019-08-02'),'sm12':new Date('2020-01-17'),
-  'smp':new Date('2017-01-01'),
-};
+const GAMES     = {pokemon:'Pokémon',onepiece:'One Piece',lorcana:'Lorcana',mtg:'MTG',yugioh:'Yu-Gi-Oh!',digimon:'Digimon',other:'Other'};
 
 // ── STATE ────────────────────────────────────────────────────────────────────
 let scriptUrl  = localStorage.getItem(KEY_URL) || '';
@@ -1123,23 +1068,16 @@ async function tcgdexFetch(url){
   return r.json();
 }
 
-// ── Parse set field: "svp-SV120" → {setId:"svp", localId:"SV120"} ────
-// PROMO RULES (TCGdex):
-//   svp  = SV Black Star Promos  → localId is plain number: svp/120
-//   swshp= SWSH Black Star Promos→ localId keeps "SV" prefix: swshp/SV120
-//   smp  = SM Black Star Promos  → localId keeps "SM" prefix: smp/SM120
-//   xyp  = XY Black Star Promos  → localId keeps "XY" prefix: xyp/XY120
-// Non-promo sets strip the letter prefix: sv03.5-199 → sv03.5/199
-var PROMO_SETS_KEEP_PREFIX = new Set(['swshp','smp','xyp','bwp']);
+// ── Parse set field: "svp-SV120" → {setId:"svp", localId:"120"} ────
 function parseSetField(raw){
   const s = String(raw||'').trim();
   if(!s) return {setId:null,localId:null};
   let setId=null, localId=null;
-  // Space: "sv03.5 199" or "svp SV120" or "swshp SV144"
+  // Space: "sv03.5 199"
   const sp = s.indexOf(' ');
   if(sp>0){ setId=s.slice(0,sp).toLowerCase(); localId=s.slice(sp+1).trim(); }
   else {
-    // Hyphen: "svp-120" "svp-SV120" "swshp-SV144" "sv03.5-199"
+    // Hyphen: "svp-SV120" "sv03.5-199"
     const hy = s.lastIndexOf('-');
     if(hy>0){
       const b=s.slice(0,hy), a=s.slice(hy+1);
@@ -1147,22 +1085,12 @@ function parseSetField(raw){
     }
   }
   if(setId && localId){
-    // For promo sets that need prefix preserved (swshp, smp, xyp, bwp) keep localId as-is
-    // For svp: TCGdex uses plain numbers (no SV prefix) — strip it
-    // For all other sets: strip any leading letter-prefix that matches the set code
-    if(PROMO_SETS_KEEP_PREFIX.has(setId)){
-      // Keep localId as-is (e.g. SV144, SM120, XY120)
-    } else if(setId === 'svp'){
-      // svp promos use bare numbers on TCGdex: SV120 → 120
-      localId = localId.replace(/^SV/i,'');
-    } else {
-      // Regular sets: strip letter prefix that mirrors set code (sv03.5-199 → 199)
-      const m = localId.match(/^([A-Za-z]+)(\d+.*)$/);
-      if(m){
-        const lp=m[1].toUpperCase(), np=m[2];
-        const sid=setId.toUpperCase().replace(/[^A-Z]/g,'');
-        if(sid.includes(lp)||lp.includes(sid.slice(0,2))) localId=np;
-      }
+    // Strip set-code letter prefix from localId: SV174→174, SWSH144→144, XY107→107
+    const m = localId.match(/^([A-Za-z]+)(\d+.*)$/);
+    if(m){
+      const lp=m[1].toUpperCase(), np=m[2];
+      const sid=setId.toUpperCase().replace(/[^A-Z]/g,'');
+      if(sid.includes(lp)||lp.includes(sid.slice(0,2))) localId=np;
     }
     return {setId,localId};
   }
@@ -1249,7 +1177,7 @@ async function fetchCardFromTCGdex(name, setField, variation, tcgdexId){
 
 // ── CM Price fetch — aggressive: retry anything without a GOOD price ─
 // "Good price" = fetched successfully AND price > 0 AND < 3 days old
-var CM_STALE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days — weekly schedule
+const CM_STALE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days — weekly schedule
 
 let _cmFetchRunning = false;
 
@@ -1613,8 +1541,8 @@ async function saveCard(action, payload){
 // Fetched once on startup, cached in localStorage for 7 days.
 // Enables set name autocomplete on all Set fields.
 
-var SETS_CACHE_KEY = 'holo_tcgdex_sets_v1';
-var SETS_CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
+const SETS_CACHE_KEY = 'holo_tcgdex_sets_v1';
+const SETS_CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
 let _setsData = []; // [{id, name, releaseDate, cardCount}]
 
 function deriveSeries(id){
@@ -1711,8 +1639,8 @@ function wireAllSetAutocompletes(){
 }
 
 // ── CURRENCY CONVERSION — cached, dual-source, 5s timeout ──────────────────
-var _rateCache = {}; // { 'EUR': {rate:1.02, ts:1234567890} }
-var RATE_TTL   = 60 * 60 * 1000; // 1 hour
+const _rateCache = {}; // { 'EUR': {rate:1.02, ts:1234567890} }
+const RATE_TTL   = 60 * 60 * 1000; // 1 hour
 
 async function fetchRateToCHF(fromCurrency){
   if(!fromCurrency || fromCurrency==='CHF') return 1;
@@ -2153,154 +2081,6 @@ function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
 function tagHtml(g){ return `<span class="tag tag-${g||'other'}">${esc(GAMES[g]||g||'Other')}</span>`; }
 function badgeHtml(s){ return `<span class="badge ${s}"><span class="bdot"></span>${sigLabel(s)}</span>`; }
 
-// ── SET ID HELPERS ────────────────────────────────────────────────────────────
-
-function setIdFromField(setField){
-  const {setId} = parseSetField(setField||'');
-  // Also try direct: "sv03.5" with no number
-  if(setId) return setId;
-  const s = String(setField||'').trim().toLowerCase();
-  // If field has no space/hyphen, might be a raw set id
-  if(/^[a-z]{1,5}[\d.]*p?$/.test(s)) return s;
-  return null;
-}
-
-function setAgeClass(setId){
-  if(!setId) return 'set-age-old';
-  const rel = SET_RELEASE[setId.toLowerCase()];
-  if(!rel) return 'set-age-old';
-  const mths = (Date.now() - rel) / (1000*60*60*24*30);
-  if(mths < 3)  return 'set-age-new';
-  if(mths < 12) return 'set-age-recent';
-  if(mths < 36) return 'set-age-mid';
-  return 'set-age-old';
-}
-
-function setIdColorClass(setId){
-  if(!setId) return 'set-id-other';
-  const s = setId.toLowerCase();
-  if(s.endsWith('p') || s.includes('promo')) return 'set-id-promo';
-  if(s.startsWith('sv'))   return 'set-id-sv';
-  if(s.startsWith('swsh')) return 'set-id-swsh';
-  if(s.startsWith('sm'))   return 'set-id-sm';
-  if(s.startsWith('xy'))   return 'set-id-xy';
-  if(s.startsWith('bw'))   return 'set-id-bw';
-  return 'set-id-other';
-}
-
-function setIdBadgeHtml(setField, cardName){
-  const sid = setIdFromField(setField);
-  const display = sid ? sid.toUpperCase() : (String(setField||'').slice(0,8)||'—');
-  const colorCls = setIdColorClass(sid);
-  const ageCls   = setAgeClass(sid);
-  const ageLabel = {'set-age-new':'New set','set-age-recent':'Recent set','set-age-mid':'Established','set-age-old':'Legacy/vintage'}[ageCls]||'';
-  const setDisplay = sid || String(setField||'').trim();
-  return `<span class="set-id-badge ${colorCls}" title="${esc(setDisplay)} · ${ageLabel}">${esc(display)}<span class="set-age-pip ${ageCls}" title="${ageLabel}"></span></span>`;
-}
-
-// ── MOMENTUM BADGE ────────────────────────────────────────────────────────────
-function momentumBadge(c){
-  const cm = c.cmLive;
-  if(!cm?.price) return '';
-  const lp = lastP(c);
-  if(lp <= 0) return '';
-  const diff = (cm.price - lp) / lp * 100;
-  const avg30 = cm.avg30 || cm.price;
-  const avg7  = cm.avg7  || cm.price;
-  const velocity = avg30 > 0 ? (cm.price - avg30) / avg30 * 100 : 0; // recent vs 30d
-  // Classify momentum
-  let cls, icon, label, tip;
-  if(diff > 18 && velocity > 10){
-    cls='stayaway'; icon='🔥'; label='STAY AWAY';
-    tip=`+${diff.toFixed(1)}% above logged · Climbing fast (${velocity.toFixed(1)}% vs 30d avg) — possibly overbought`;
-  } else if(diff > 15){
-    cls='rocket'; icon='🚀'; label='ROCKET';
-    tip=`+${diff.toFixed(1)}% above logged price`;
-  } else if(diff > 5){
-    cls='climbing'; icon='📈'; label='CLIMBING';
-    tip=`+${diff.toFixed(1)}% above logged price`;
-  } else if(diff >= -5){
-    cls='flat'; icon='➡'; label='FLAT';
-    tip=`Within ${Math.abs(diff).toFixed(1)}% of logged price`;
-  } else if(diff >= -15){
-    cls='dip'; icon='📉'; label='PRICE DIP';
-    tip=`${diff.toFixed(1)}% below logged — potential entry`;
-  } else {
-    cls='drop'; icon='⬇'; label='DROPPED';
-    tip=`${diff.toFixed(1)}% below logged — significant drop`;
-  }
-  return `<span class="mbadge ${cls}" title="${tip}">${icon} ${label}</span>`;
-}
-
-// ── AI TAKE ───────────────────────────────────────────────────────────────────
-var _aiTakeCache = {};
-var _aiTakePending = new Set();
-
-function _buildAITakePrompt(c){
-  const sig    = signal(c);
-  const bz     = buyZone(c);
-  const lp     = lastP(c);
-  const pa     = priceAnalysis(c);
-  const cm     = c.cmLive;
-  const mktDiff = (cm?.price && lp > 0) ? ((cm.price - lp)/lp*100).toFixed(1) : null;
-  const avg30diff = (cm?.avg30 && cm?.avg7) ? ((cm.price - cm.avg30)/cm.avg30*100).toFixed(1) : null;
-  return `TCG investment card data. Respond with ONE crisp sentence (max 12 words) as a buy/hold/watch/avoid recommendation. No preamble.
-
-Card: ${c.name} (${c.set})
-Signal: ${sig} | Mentions: ${c.mentions} | Price trend: ${pa.trend}
-Logged price: CHF ${lp.toFixed(2)} | CM market: ${cm?.price ? '€'+cm.price.toFixed(2) : 'unavailable'}
-Market vs logged: ${mktDiff ? mktDiff+'%' : 'n/a'} | 7d vs 30d avg: ${avg30diff ? avg30diff+'%' : 'n/a'}
-Buy zone score: ${bz.score}/4 | Reasons: ${bz.reasons.join(', ')||'none'}
-Price movement: ${pa.dipThenFlat ? 'dipped then stabilised' : pa.trend}
-
-Reply format: "BUY · [reason]" or "HOLD · [reason]" or "WATCH · [reason]" or "AVOID · [reason]"`;
-}
-
-async function fetchAITake(cardId){
-  if(_aiTakePending.has(cardId)) return;
-  _aiTakePending.add(cardId);
-  const c = cards.find(x=>x.id===cardId); if(!c) return;
-  try{
-    const resp = await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:60,
-        messages:[{role:'user',content:_buildAITakePrompt(c)}]
-      })
-    });
-    const data = await resp.json();
-    const text = data?.content?.[0]?.text?.trim() || '';
-    if(!text) throw new Error('no text');
-    _aiTakeCache[cardId] = text;
-    // Update cell in DOM without full re-render
-    document.querySelectorAll(`[data-aitake="${cardId}"]`).forEach(el=>{
-      const verdict = text.split('·')[0].trim().toUpperCase();
-      const cls = verdict==='BUY'?'bullish':verdict==='AVOID'||verdict==='SELL'?'bearish':verdict==='WATCH'?'watch':'neutral';
-      el.textContent = text;
-      el.className = `ai-take ${cls}`;
-    });
-  }catch(e){
-    _aiTakeCache[cardId] = '—';
-  }finally{
-    _aiTakePending.delete(cardId);
-  }
-}
-
-function aiTakeCellHtml(c){
-  if(_aiTakeCache[c.id]){
-    const text = _aiTakeCache[c.id];
-    if(text==='—') return `<span class="ai-take neutral" data-aitake="${c.id}">—</span>`;
-    const verdict = text.split('·')[0].trim().toUpperCase();
-    const cls = verdict==='BUY'?'bullish':verdict==='AVOID'||verdict==='SELL'?'bearish':verdict==='WATCH'?'watch':'neutral';
-    return `<span class="ai-take ${cls}" data-aitake="${c.id}" title="${esc(text)}">${esc(text)}</span>`;
-  }
-  // Trigger background fetch
-  setTimeout(()=>fetchAITake(c.id), 0);
-  return `<span class="ai-take loading" data-aitake="${c.id}">analyzing…</span>`;
-}
-
 // ── RENDER ───────────────────────────────────────────────────────────────────
 function setFilter(f,btn){
   filter=f;
@@ -2360,11 +2140,11 @@ function render(){
       <td>
         <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;">
           <span class="card-name">${esc(c.name)}</span>
+          <span class="card-set">${esc(c.set)}</span>
         </div>
         ${c.notes?`<div class="card-note-preview">📝 ${esc(c.notes)}</div>`:''}
       </td>
       <td>${tagHtml(c.game)}</td>
-      <td>${setIdBadgeHtml(c.set, c.name)}</td>
       <td>
         <span class="price-val">${fmtCHF(lp)}</span>
         ${c.target?`<span style="font-family:DM Mono,monospace;font-size:9px;margin-left:6px;color:${lp<=c.target?'var(--green)':'var(--text-dimmer)'}">🎯${fmtCHF(c.target)}</span>`:''}
@@ -2382,7 +2162,7 @@ function render(){
         return `<div style="display:flex;flex-direction:column;gap:1px;">
           <span style="font-family:'Bebas Neue',sans-serif;font-size:18px;line-height:1;color:${priceCol}">\u20AC${cm.price.toFixed(2)}</span>
           ${pct}
-          ${momentumBadge(c)}
+          ${cm.week?`<span style="font-family:DM Mono,monospace;font-size:8px;color:var(--text-dimmer);">${cm.week}</span>`:''}
         </div>`;
       })()}</td>
       <td><div class="mentions-wrap"><span class="mentions-num">${c.mentions}</span><div class="mdots">${c.mentions<=5?Array.from({length:c.mentions},()=>'<div class="mdot on"></div>').join('')+Array.from({length:5-c.mentions},()=>'<div class="mdot"></div>').join(''):Array.from({length:5},()=>'<div class="mdot on" style="background:var(--hot)"></div>').join('')+"<span style=\"font-family:DM Mono,monospace;font-size:9px;color:var(--hot);margin-left:3px\">+${c.mentions-5}</span>"}</div></div></td>
@@ -2393,7 +2173,6 @@ function render(){
           ${buyZoneBadge(buyZone(c))}
         </div>
       </td>
-      <td>${aiTakeCellHtml(c)}</td>
       <td><div class="row-btns"><button class="btn-xs btn-mention" data-id="${c.id}">+1</button><button class="btn-xs btn-unmention" data-unmention="${c.id}">−1</button><button class="btn-xs btn-edit-row" data-edit="${c.id}" style="background:rgba(245,200,66,0.08);border-color:rgba(245,200,66,0.25);color:var(--gold);">✎</button><button class="btn-xs btn-del" data-del="${c.id}">✕</button></div></td>`;
     tr.querySelector('[data-star]').addEventListener('click', e=>{ e.stopPropagation(); togglePin(c.id); });
     tr.querySelector('[data-edit]').addEventListener('click', e=>{ e.stopPropagation(); openModal(c.id); setTimeout(()=>{ if(!document.getElementById('edit-panel').classList.contains('open')) toggleEditPanel(); },100); });
@@ -2412,7 +2191,7 @@ function render(){
     const div=document.createElement('div');
     div.className='mob-card'; div.style.animationDelay=(i*0.03)+'s';
     div.innerHTML=`
-      <div class="mob-top"><div><div class="mob-name">${esc(c.name)}</div><div class="mob-set" style="display:flex;align-items:center;gap:6px;margin-top:3px;">${setIdBadgeHtml(c.set,c.name)}</div>${c.notes?`<div class="mob-note">📝 ${esc(c.notes)}</div>`:''}</div>${badgeHtml(s)}${buyZoneBadge(buyZone(c))}</div>
+      <div class="mob-top"><div><div class="mob-name">${esc(c.name)}</div><div class="mob-set">${esc(c.set)}</div>${c.notes?`<div class="mob-note">📝 ${esc(c.notes)}</div>`:''}</div>${badgeHtml(s)}${buyZoneBadge(buyZone(c))}</div>
       <div class="mob-mid"><span class="mob-price">${fmtCHF(lp)}</span>${tagHtml(c.game)}<span class="mob-info">${c.mentions} mention${c.mentions!==1?'s':''}</span><span class="mob-info">${fmtDate(c.firstSeen)}</span></div>
       <div class="mob-bot"><div style="display:flex;gap:8px"><button class="btn-xs btn-mention" onclick="quickMention(event,'${c.id}')">+1</button><button class="btn-xs btn-unmention" onclick="removeMention(event,'${c.id}')">−1</button><button class="btn-xs btn-del" onclick="delCard(event,'${c.id}')">✕</button></div></div>`;
     div.onclick=e=>{if(!e.target.closest('button'))openModal(c.id);};
@@ -2517,7 +2296,7 @@ function renderPriceChart(c){
 }
 
 // ── LIVE PRICE via TCGdex (CORS-friendly, no key needed) ────────────────────
-var _cmCache = {};
+const _cmCache = {};
 async function fetchCMPrice(card){
   const box = document.getElementById('m-cm');
   const imgWrap = document.getElementById('m-card-img');
@@ -2761,7 +2540,7 @@ function updateCollMarket(){
 }
 
 // ── Collection market price cache (independent of tracker) ──────────────────
-var _collMktCache = {}; // key = "name|||set|||variation"
+const _collMktCache = {}; // key = "name|||set|||variation"
 
 async function fetchCollMarketPrice(name, set, variation, tcgdexId){
   const key = [name, set, variation||''].join('|||');
@@ -2799,7 +2578,7 @@ function getCollMarketPrice(name, set, variation, tcgdexId){
 }
 
 // ── condLabel helper ──────────────────────────────────────────────────────────
-var VAR_SHORT = {normal:'Non-holo',holo:'Holo',reverse:'Rev.','full-art':'FA','alt-art':'Alt Art',promo:'Promo',special:'SIR'};
+const VAR_SHORT = {normal:'Non-holo',holo:'Holo',reverse:'Rev.','full-art':'FA','alt-art':'Alt Art',promo:'Promo',special:'SIR'};
 function collCondLabel(item){
   return (CONDITIONS[item.condition]||item.condition||'Raw')
     +(item.rawCondition?' · '+(RAW_SHORT[item.rawCondition]||item.rawCondition):'')
@@ -3338,68 +3117,21 @@ async function openModal(id){
   // Then fetch fresh live price from TCGdex (upgrades display if successful)
   fetchCMPrice(c).catch(()=>{});
 
-  // Momentum row
-  setTimeout(()=>{
-    const mr=document.getElementById('m-momentum-row');
-    if(mr) mr.innerHTML=momentumBadge(c)||'<span style="font-family:DM Mono,monospace;font-size:9px;color:var(--text-dimmer);">Market data loading…</span>';
-  }, 200);
-
-  _triggerModalAI(c);
-}
-
-async function _triggerModalAI(c){
-  const ai=document.getElementById('m-ai'); if(!ai) return;
-  // Use cached inline take if available
-  if(_aiTakeCache[c.id] && _aiTakeCache[c.id]!=='—'){
-    const text = _aiTakeCache[c.id];
-    const verdict = text.split('·')[0].trim().toUpperCase();
-    const cls = verdict==='BUY'?'bullish':verdict==='AVOID'||verdict==='SELL'?'bearish':verdict==='WATCH'?'watch':'neutral';
-    ai.innerHTML=`<span style="font-family:DM Mono,monospace;font-size:10px;color:var(--text-dim);letter-spacing:.05em;display:block;margin-bottom:6px;">INLINE VERDICT</span><span style="font-size:13px;font-weight:600;color:${cls==='bullish'?'var(--green)':cls==='bearish'?'var(--red)':cls==='watch'?'var(--blue)':'var(--text-dim)'}">${esc(text)}</span><hr style="border:none;border-top:1px solid var(--border);margin:10px 0;">`;
-    ai.insertAdjacentHTML('beforeend','<div class="ai-load"><span></span><span></span><span></span>&nbsp;Deep analysis loading…</div>');
-  } else {
-    ai.innerHTML='<div class="ai-load"><span></span><span></span><span></span>&nbsp;Analyzing…</div>';
-  }
+  const ai=document.getElementById('m-ai');
+  ai.innerHTML='<div class="ai-load"><span></span><span></span><span></span>&nbsp;Analyzing…</div>';
   try{
-    const p=c.priceHistory.map(x=>x.price).filter(v=>v>0);
-    const avg=p.length?(p.reduce((a,b)=>a+b,0)/p.length).toFixed(2):'n/a';
-    const growth=p.length>1?(((p[p.length-1]-p[0])/p[0])*100).toFixed(1):'n/a';
-    const cm=c.cmLive;
-    const mktDiff=cm?.price&&p.length?((cm.price-p[p.length-1])/p[p.length-1]*100).toFixed(1):null;
-    const bz=buyZone(c);
-    const sid=setIdFromField(c.set);
-    const ageClass=setAgeClass(sid);
-    const ageLabel={'set-age-new':'brand new set','set-age-recent':'recent set','set-age-mid':'established set','set-age-old':'vintage set'}[ageClass]||'';
-    const prompt=`You are a sharp TCG investment analyst specializing in Pokémon. Give a 2-3 sentence verdict (max 75 words). Lead with BUY / HOLD / WATCH / AVOID in bold. Be direct, no fluff.
-
-Card: "${c.name}"
-Set: ${c.set}${sid?' ('+sid.toUpperCase()+' — '+ageLabel+')':''}
-Mentions: ${c.mentions} | Signal: ${signal(c).toUpperCase()} | Trend: ${priceAnalysis(c).trend}
-Avg logged price: CHF ${avg} | Price growth: ${growth}%
-Cardmarket price: ${cm?.price?'€'+cm.price.toFixed(2):'unavailable'}${mktDiff?' ('+mktDiff+'% vs logged)':''}
-CM 7d avg: ${cm?.avg7?'€'+cm.avg7.toFixed(2):'—'} | CM 30d avg: ${cm?.avg30?'€'+cm.avg30.toFixed(2):'—'}
-Buy zone score: ${bz.score}/4 | Reasons: ${bz.reasons.join(', ')||'none'}
-Dip then flat: ${priceAnalysis(c).dipThenFlat?'YES — classic entry signal':'no'}
-${c.notes?'Notes: '+c.notes:''}`;
+    const p=c.priceHistory.map(x=>x.price);
+    const avg=(p.reduce((a,b)=>a+b,0)/p.length).toFixed(2);
+    const growth=p.length>1?(((p[p.length-1]-p[0])/p[0])*100).toFixed(1):0;
+    const prompt=`You are a TCG investment analyst. Give a sharp 2-3 sentence opinion in under 80 words — buy, hold, or avoid?
+Card: "${c.name}", Game: ${GAMES[c.game]||'TCG'}, Set: ${c.set}, Mentions: ${c.mentions}, Avg price: $${avg}, Price change: ${growth}%, Signal: ${signal(c).toUpperCase()}${c.notes?', Notes: '+c.notes:''}.`;
     const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
     const data=await res.json();
-    const text=data.content?.find(b=>b.type==='text')?.text||'No analysis.';
-    ai.innerHTML=`<div style="line-height:1.6;font-size:12px;">${text.replace(/\*\*(BUY|HOLD|WATCH|AVOID|SELL)\*\*/g,(m,w)=>{const col=w==='BUY'?'var(--green)':w==='AVOID'||w==='SELL'?'var(--red)':w==='WATCH'?'var(--blue)':'var(--gold)';return `<span style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:${col};letter-spacing:1px;">${w}</span>`;})}</div>`;
+    ai.textContent=data.content?.find(b=>b.type==='text')?.text||'No analysis.';
   }catch{
-    const fb={hot:'High community buzz and rising prices — strong buy signal. Consider a position soon.',warm:'Gaining traction. A small position makes sense while momentum builds.',watch:'Early interest detected. Wait for a second mention spike or market confirmation.',cold:'Low activity. No signal. Hold off and watch for a catalyst.',buydip:'Classic dip-and-flatten pattern — this is typically the optimal entry window.'};
-    ai.innerHTML=`<div style="line-height:1.6;font-size:12px;">${fb[signal(c)]||'Insufficient data for analysis.'}</div>`;
+    const fb={hot:'High buzz and rising prices — strong buy signal.',warm:'Gaining traction. Consider a small position.',watch:'Early interest. Wait for more data.',cold:'Low activity. Hold off for now.'};
+    ai.textContent=fb[signal(c)];
   }
-}
-
-function refreshModalAI(){
-  if(!_modalCardId) return;
-  const c=cards.find(x=>x.id===_modalCardId); if(!c) return;
-  delete _aiTakeCache[c.id];
-  _triggerModalAI(c);
-  // Also refresh momentum
-  setTimeout(()=>{
-    const mr=document.getElementById('m-momentum-row');
-    if(mr) mr.innerHTML=momentumBadge(c)||'<span style="font-family:DM Mono,monospace;font-size:9px;color:var(--text-dimmer);">No market data yet</span>';
-  }, 300);
 }
 function closeModal(){
   document.getElementById('modal').style.display='none';
@@ -3430,7 +3162,7 @@ function toggleEditPanel(){
     const hint = document.getElementById('edit-tcgdex-hint');
     if(hint){
       if(c.tcgdexId) hint.innerHTML='✓ Linked to TCGdex: <b style="color:var(--green)">'+esc(c.tcgdexId)+'</b> — prices and image will use this exact card';
-      else hint.innerHTML='No TCGdex ID yet — prices fetched by name+set search.<br><span style="color:var(--text-dimmer);font-size:9px;">Promo codes: svp-120 (SV promos) · swshp-SV144 (SWSH promos) · smp-SM120 (SM promos). Or paste a direct TCGdex ID from <a href="https://www.tcgdex.net" target="_blank" style="color:var(--purple);">tcgdex.net</a></span>';
+      else hint.innerHTML='No TCGdex ID yet — prices fetched by name+number search. For exact match: open <a href="https://www.tcgdex.net" target="_blank" style="color:var(--purple);">tcgdex.net</a>, find your card, copy the ID from the URL.';
     }
   }
 }
@@ -3890,7 +3622,7 @@ function toast(msg,type='info',duration=2500){
 }
 
 // ── BUY ZONE NOTIFICATIONS ────────────────────────────────────────────────────
-var _notifiedIds = new Set();
+const _notifiedIds = new Set();
 function checkBuyZoneNotifications(){
   const newAlerts=[];
   cards.forEach(c=>{
