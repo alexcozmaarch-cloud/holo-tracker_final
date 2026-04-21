@@ -113,6 +113,35 @@ header{padding:28px 0 24px;display:flex;align-items:flex-end;justify-content:spa
 .badge.hot .bdot{animation:bdp 1.2s infinite;}
 .badge.cold .bdot{animation:none;}
 @keyframes bdp{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(0.6)}}
+/* ── MOMENTUM BADGE ── */
+.mbadge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:2px;font-family:DM Mono,monospace;font-size:9px;text-transform:uppercase;white-space:nowrap;letter-spacing:0.05em;font-weight:600;margin-top:3px;}
+.mbadge.rocket{background:rgba(57,217,138,0.18);border:1px solid rgba(57,217,138,0.55);color:#39d98a;}
+.mbadge.climbing{background:rgba(77,159,255,0.12);border:1px solid rgba(77,159,255,0.4);color:#4d9fff;}
+.mbadge.flat{background:rgba(122,122,154,0.08);border:1px solid rgba(122,122,154,0.18);color:var(--text-dimmer);}
+.mbadge.dip{background:rgba(245,200,66,0.12);border:1px solid rgba(245,200,66,0.45);color:#f5c842;}
+.mbadge.drop{background:rgba(255,77,109,0.1);border:1px solid rgba(255,77,109,0.35);color:#ff4d6d;}
+.mbadge.stayaway{background:rgba(255,107,53,0.12);border:1px solid rgba(255,107,53,0.4);color:var(--hot);}
+/* ── SET ID BADGE ── */
+.set-id-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:2px;font-family:DM Mono,monospace;font-size:10px;font-weight:600;letter-spacing:0.08em;white-space:nowrap;cursor:default;}
+.sid-sv{background:rgba(183,127,255,0.15);border:1px solid rgba(183,127,255,0.4);color:#b77fff;}
+.sid-swsh{background:rgba(77,159,255,0.12);border:1px solid rgba(77,159,255,0.35);color:#4d9fff;}
+.sid-sm{background:rgba(57,217,138,0.1);border:1px solid rgba(57,217,138,0.3);color:#39d98a;}
+.sid-xy{background:rgba(255,152,0,0.1);border:1px solid rgba(255,152,0,0.35);color:#ff9800;}
+.sid-bw{background:rgba(245,200,66,0.1);border:1px solid rgba(245,200,66,0.3);color:#f5c842;}
+.sid-promo{background:rgba(255,77,109,0.1);border:1px solid rgba(255,77,109,0.35);color:#ff4d6d;}
+.sid-other{background:var(--surface);border:1px solid var(--border);color:var(--text-dim);}
+.age-pip{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+.age-new{background:#39d98a;box-shadow:0 0 4px #39d98a99;}
+.age-recent{background:#4d9fff;}
+.age-mid{background:#f5c842;}
+.age-old{background:#44445a;}
+/* ── AI TAKE ── */
+.ai-take{font-family:DM Mono,monospace;font-size:9px;line-height:1.5;max-width:150px;cursor:default;color:var(--text-dim);}
+.ai-take.loading{color:var(--text-dimmer);font-style:italic;}
+.ai-take.bullish{color:#39d98a;}
+.ai-take.bearish{color:#ff4d6d;}
+.ai-take.caution{color:#f5c842;}
+.ai-take.watchcol{color:#4d9fff;}
 .row-btns{display:flex;gap:6px;opacity:0;transition:opacity 0.15s;}
 .card-row:hover .row-btns{opacity:1;}
 .btn-xs{border-radius:2px;padding:3px 8px;font-family:DM Mono,monospace;font-size:10px;cursor:pointer;border:1px solid;}
@@ -513,7 +542,7 @@ hr.div{border:none;border-top:1px solid var(--border);margin:36px 0;}
   <!-- DESKTOP TABLE -->
   <div class="desk-table">
     <table class="cards-table">
-      <thead><tr><th></th><th>Card · Set · Notes</th><th>Game</th><th>Last Price</th><th>Market</th><th>Mentions</th><th>Last Seen</th><th>Signal</th><th></th></tr></thead>
+      <thead><tr><th></th><th>Card · Notes</th><th>Game</th><th>Set ID</th><th>Last Price</th><th>Market · Momentum</th><th>Mentions</th><th>Last Seen</th><th>Signal</th><th>AI Take</th><th></th></tr></thead>
       <tbody id="tbody"></tbody>
     </table>
   </div>
@@ -968,7 +997,11 @@ hr.div{border:none;border-top:1px solid var(--border);margin:36px 0;}
     <div id="m-prices"></div>
 
     <!-- AI take -->
-    <div class="modal-sec" style="margin-top:18px;">🤖 AI Investment Take</div>
+    <div class="modal-sec" style="margin-top:18px;display:flex;align-items:center;justify-content:space-between;">
+      <span>🤖 AI Investment Take</span>
+      <button onclick="refreshModalAI()" style="background:none;border:1px solid var(--border);border-radius:2px;padding:2px 8px;color:var(--text-dim);font-family:DM Mono,monospace;font-size:9px;cursor:pointer;letter-spacing:.05em;">↻ Refresh</button>
+    </div>
+    <div id="m-momentum-row" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;min-height:20px;"></div>
     <div class="ai-box" id="m-ai"></div>
   </div>
 </div>
@@ -1068,16 +1101,22 @@ async function tcgdexFetch(url){
   return r.json();
 }
 
-// ── Parse set field: "svp-SV120" → {setId:"svp", localId:"120"} ────
+// ── Parse set field: "svp-120" → {setId:"svp", localId:"120"} ────
+// Promo rules:
+//   svp   (SV Black Star)   → bare number:   svp/120
+//   swshp (SWSH Black Star) → keeps prefix:  swshp/SV144
+//   smp   (SM Black Star)   → keeps prefix:  smp/SM120
+//   xyp   (XY Black Star)   → keeps prefix:  xyp/XY120
+var _PROMO_KEEP_PREFIX = new Set(['swshp','smp','xyp','bwp']);
 function parseSetField(raw){
   const s = String(raw||'').trim();
   if(!s) return {setId:null,localId:null};
   let setId=null, localId=null;
-  // Space: "sv03.5 199"
+  // Space: "sv03.5 199" or "swshp SV144"
   const sp = s.indexOf(' ');
   if(sp>0){ setId=s.slice(0,sp).toLowerCase(); localId=s.slice(sp+1).trim(); }
   else {
-    // Hyphen: "svp-SV120" "sv03.5-199"
+    // Hyphen: "svp-120" "swshp-SV144" "sv03.5-199"
     const hy = s.lastIndexOf('-');
     if(hy>0){
       const b=s.slice(0,hy), a=s.slice(hy+1);
@@ -1085,12 +1124,19 @@ function parseSetField(raw){
     }
   }
   if(setId && localId){
-    // Strip set-code letter prefix from localId: SV174→174, SWSH144→144, XY107→107
-    const m = localId.match(/^([A-Za-z]+)(\d+.*)$/);
-    if(m){
-      const lp=m[1].toUpperCase(), np=m[2];
-      const sid=setId.toUpperCase().replace(/[^A-Z]/g,'');
-      if(sid.includes(lp)||lp.includes(sid.slice(0,2))) localId=np;
+    if(_PROMO_KEEP_PREFIX.has(setId)){
+      // Keep prefix as-is (swshp/SV144, smp/SM120, etc.)
+    } else if(setId === 'svp'){
+      // svp uses bare numbers: SV120 → 120
+      localId = localId.replace(/^SV/i,'');
+    } else {
+      // Regular sets: strip letter prefix matching set code
+      const m = localId.match(/^([A-Za-z]+)(\d+.*)$/);
+      if(m){
+        const lp=m[1].toUpperCase(), np=m[2];
+        const sid=setId.toUpperCase().replace(/[^A-Z]/g,'');
+        if(sid.includes(lp)||lp.includes(sid.slice(0,2))) localId=np;
+      }
     }
     return {setId,localId};
   }
@@ -2081,6 +2127,179 @@ function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
 function tagHtml(g){ return `<span class="tag tag-${g||'other'}">${esc(GAMES[g]||g||'Other')}</span>`; }
 function badgeHtml(s){ return `<span class="badge ${s}"><span class="bdot"></span>${sigLabel(s)}</span>`; }
 
+// ── SET ID + AGE HELPERS ──────────────────────────────────────────────────────
+var _SET_RELEASE = {
+  'sv01':new Date('2023-03-31'),'sv02':new Date('2023-06-09'),'sv03':new Date('2023-09-22'),
+  'sv03.5':new Date('2023-10-06'),'sv04':new Date('2023-11-03'),'sv04.5':new Date('2023-12-08'),
+  'sv05':new Date('2024-01-26'),'sv06':new Date('2024-03-22'),'sv06.5':new Date('2024-05-24'),
+  'sv07':new Date('2024-07-19'),'sv07.5':new Date('2024-08-02'),'sv08':new Date('2024-11-01'),
+  'sv08.5':new Date('2024-11-08'),'sv09':new Date('2025-01-17'),'sv09.5':new Date('2025-03-28'),
+  'sv10':new Date('2025-05-30'),'sv11':new Date('2025-08-29'),'svp':new Date('2023-01-01'),
+  'swsh1':new Date('2020-02-07'),'swsh2':new Date('2020-05-01'),'swsh3':new Date('2020-08-14'),
+  'swsh3.5':new Date('2020-10-09'),'swsh4':new Date('2020-11-13'),'swsh4.5':new Date('2021-01-22'),
+  'swsh5':new Date('2021-03-19'),'swsh6':new Date('2021-06-18'),'swsh7':new Date('2021-08-27'),
+  'swsh7.5':new Date('2021-10-08'),'swsh8':new Date('2021-11-12'),'swsh9':new Date('2022-02-25'),
+  'swsh10':new Date('2022-05-27'),'swsh11':new Date('2022-09-09'),'swsh12':new Date('2022-11-11'),
+  'swsh12.5':new Date('2022-12-02'),'swshp':new Date('2020-01-01'),
+  'sm1':new Date('2017-02-03'),'sm2':new Date('2017-05-05'),'sm3':new Date('2017-08-04'),
+  'sm3.5':new Date('2017-10-06'),'sm4':new Date('2017-11-03'),'sm4.5':new Date('2018-02-02'),
+  'sm5':new Date('2018-04-06'),'sm6':new Date('2018-08-03'),'sm7':new Date('2018-11-02'),
+  'sm7.5':new Date('2018-12-07'),'sm8':new Date('2019-01-11'),'sm9':new Date('2019-04-05'),
+  'sm10':new Date('2019-07-12'),'sm11':new Date('2019-08-02'),'sm12':new Date('2020-01-17'),
+  'smp':new Date('2017-01-01')
+};
+
+function _setIdFrom(setField){
+  var ps = parseSetField(setField||'');
+  if(ps.setId) return ps.setId;
+  var s = String(setField||'').trim().toLowerCase();
+  if(/^[a-z]{1,6}[\d.]*p?$/.test(s)) return s;
+  return null;
+}
+
+function _agePip(setId){
+  if(!setId) return 'age-old';
+  var rel = _SET_RELEASE[setId.toLowerCase()];
+  if(!rel) return 'age-old';
+  var mths = (Date.now()-rel)/(1000*60*60*24*30);
+  if(mths<3)  return 'age-new';
+  if(mths<12) return 'age-recent';
+  if(mths<36) return 'age-mid';
+  return 'age-old';
+}
+
+function _ageLabel(pip){
+  return {
+    'age-new':'New set (<3 months)',
+    'age-recent':'Recent set (3–12 months)',
+    'age-mid':'Established (1–3 years)',
+    'age-old':'Legacy / vintage'
+  }[pip]||'';
+}
+
+function _sidColor(setId){
+  if(!setId) return 'sid-other';
+  var s=setId.toLowerCase();
+  if(s.endsWith('p'))    return 'sid-promo';
+  if(s.startsWith('sv')) return 'sid-sv';
+  if(s.startsWith('swsh')) return 'sid-swsh';
+  if(s.startsWith('sm')) return 'sid-sm';
+  if(s.startsWith('xy')) return 'sid-xy';
+  if(s.startsWith('bw')) return 'sid-bw';
+  return 'sid-other';
+}
+
+function setIdBadgeHtml(setField){
+  var sid = _setIdFrom(setField);
+  var display = sid ? sid.toUpperCase() : (String(setField||'').trim().slice(0,8)||'—');
+  var colorCls = _sidColor(sid);
+  var pip = _agePip(sid);
+  var tip = (sid||String(setField||'').trim()) + ' · ' + _ageLabel(pip);
+  return '<span class="set-id-badge '+colorCls+'" title="'+esc(tip)+'">'+esc(display)+'<span class="age-pip '+pip+'" title="'+_ageLabel(pip)+'"></span></span>';
+}
+
+// ── MOMENTUM BADGE ────────────────────────────────────────────────────────────
+function momentumBadge(c){
+  var cm = c.cmLive;
+  if(!cm||!cm.price) return '';
+  var lp = lastP(c);
+  if(lp<=0) return '';
+  var diff = (cm.price - lp) / lp * 100;
+  var velocity = (cm.avg30&&cm.avg30>0) ? (cm.price - cm.avg30)/cm.avg30*100 : 0;
+  var cls,icon,label,tip;
+  if(diff>18 && velocity>10){
+    cls='stayaway'; icon='🔥'; label='STAY AWAY';
+    tip='+'+diff.toFixed(1)+'% above logged · climbing fast — possibly overbought';
+  } else if(diff>15){
+    cls='rocket'; icon='🚀'; label='ROCKET';
+    tip='+'+diff.toFixed(1)+'% above logged price';
+  } else if(diff>5){
+    cls='climbing'; icon='📈'; label='CLIMBING';
+    tip='+'+diff.toFixed(1)+'% above logged price';
+  } else if(diff>=-5){
+    cls='flat'; icon='➡'; label='FLAT';
+    tip='Within '+Math.abs(diff).toFixed(1)+'% of logged price';
+  } else if(diff>=-15){
+    cls='dip'; icon='📉'; label='PRICE DIP';
+    tip=diff.toFixed(1)+'% below logged — potential entry';
+  } else {
+    cls='drop'; icon='⬇'; label='DROPPED';
+    tip=diff.toFixed(1)+'% below logged — significant drop';
+  }
+  return '<span class="mbadge '+cls+'" title="'+esc(tip)+'">'+icon+' '+label+'</span>';
+}
+
+// ── AI TAKE (inline table cell, lazy-fetched per card) ───────────────────────
+var _aiTakeCache = {};
+var _aiTakePending = new Set();
+
+function _aiVerdict(text){
+  var v = text.split('·')[0].trim().toUpperCase();
+  if(v==='BUY')   return 'bullish';
+  if(v==='AVOID'||v==='SELL') return 'bearish';
+  if(v==='WATCH') return 'watchcol';
+  if(v==='HOLD')  return 'caution';
+  return '';
+}
+
+function aiTakeCellHtml(c){
+  if(_aiTakeCache[c.id]){
+    var text = _aiTakeCache[c.id];
+    if(text==='—') return '<span class="ai-take" data-aitake="'+c.id+'">—</span>';
+    var cls = _aiVerdict(text);
+    return '<span class="ai-take '+cls+'" data-aitake="'+c.id+'" title="'+esc(text)+'">'+esc(text)+'</span>';
+  }
+  // Trigger background fetch
+  setTimeout(function(){ _fetchAITake(c.id); }, 0);
+  return '<span class="ai-take loading" data-aitake="'+c.id+'">analyzing…</span>';
+}
+
+async function _fetchAITake(cardId){
+  if(_aiTakePending.has(cardId)) return;
+  _aiTakePending.add(cardId);
+  var c = cards.find(function(x){ return x.id===cardId; });
+  if(!c){ _aiTakePending.delete(cardId); return; }
+  try{
+    var lp = lastP(c);
+    var p  = (c.priceHistory||[]).map(function(x){ return x.price; }).filter(function(v){ return v>0; });
+    var avg = p.length ? (p.reduce(function(a,b){return a+b;},0)/p.length).toFixed(2) : 'n/a';
+    var growth = p.length>1 ? (((p[p.length-1]-p[0])/p[0])*100).toFixed(1) : 'n/a';
+    var cm = c.cmLive;
+    var mktDiff = (cm&&cm.price&&lp>0) ? ((cm.price-lp)/lp*100).toFixed(1)+'%' : 'n/a';
+    var bz = buyZone(c);
+    var pa = priceAnalysis(c);
+    var prompt = 'TCG card investment. Reply with ONE line max 12 words. Format: "BUY · reason" or "HOLD · reason" or "WATCH · reason" or "AVOID · reason".\n'
+      +'Card: '+c.name+' ('+c.set+')\n'
+      +'Signal: '+signal(c)+' | Mentions: '+c.mentions+' | Trend: '+pa.trend+'\n'
+      +'Avg logged: CHF '+avg+' | Growth: '+growth+'% | CM market: '+(cm&&cm.price?'€'+cm.price.toFixed(2):'n/a')+' ('+mktDiff+' vs logged)\n'
+      +'Buy zone: '+bz.score+'/4 | '+bz.reasons.join(', ')+(pa.dipThenFlat?' | dip then flat — entry signal':'');
+    var res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:60,messages:[{role:'user',content:prompt}]})
+    });
+    var data = await res.json();
+    var text = (data&&data.content&&data.content[0]&&data.content[0].text)||'';
+    text = text.trim();
+    if(!text) throw new Error('empty');
+    _aiTakeCache[cardId] = text;
+    // Update all matching cells without full re-render
+    document.querySelectorAll('[data-aitake="'+cardId+'"]').forEach(function(el){
+      var cls = _aiVerdict(text);
+      el.textContent = text;
+      el.className = 'ai-take '+cls;
+      el.title = text;
+    });
+  } catch(e){
+    _aiTakeCache[cardId] = '—';
+    document.querySelectorAll('[data-aitake="'+cardId+'"]').forEach(function(el){
+      el.textContent='—'; el.className='ai-take';
+    });
+  } finally {
+    _aiTakePending.delete(cardId);
+  }
+}
+
 // ── RENDER ───────────────────────────────────────────────────────────────────
 function setFilter(f,btn){
   filter=f;
@@ -2140,11 +2359,11 @@ function render(){
       <td>
         <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;">
           <span class="card-name">${esc(c.name)}</span>
-          <span class="card-set">${esc(c.set)}</span>
         </div>
         ${c.notes?`<div class="card-note-preview">📝 ${esc(c.notes)}</div>`:''}
       </td>
       <td>${tagHtml(c.game)}</td>
+      <td>${setIdBadgeHtml(c.set)}</td>
       <td>
         <span class="price-val">${fmtCHF(lp)}</span>
         ${c.target?`<span style="font-family:DM Mono,monospace;font-size:9px;margin-left:6px;color:${lp<=c.target?'var(--green)':'var(--text-dimmer)'}">🎯${fmtCHF(c.target)}</span>`:''}
@@ -2162,7 +2381,7 @@ function render(){
         return `<div style="display:flex;flex-direction:column;gap:1px;">
           <span style="font-family:'Bebas Neue',sans-serif;font-size:18px;line-height:1;color:${priceCol}">\u20AC${cm.price.toFixed(2)}</span>
           ${pct}
-          ${cm.week?`<span style="font-family:DM Mono,monospace;font-size:8px;color:var(--text-dimmer);">${cm.week}</span>`:''}
+          ${momentumBadge(c)}
         </div>`;
       })()}</td>
       <td><div class="mentions-wrap"><span class="mentions-num">${c.mentions}</span><div class="mdots">${c.mentions<=5?Array.from({length:c.mentions},()=>'<div class="mdot on"></div>').join('')+Array.from({length:5-c.mentions},()=>'<div class="mdot"></div>').join(''):Array.from({length:5},()=>'<div class="mdot on" style="background:var(--hot)"></div>').join('')+"<span style=\"font-family:DM Mono,monospace;font-size:9px;color:var(--hot);margin-left:3px\">+${c.mentions-5}</span>"}</div></div></td>
@@ -2173,6 +2392,7 @@ function render(){
           ${buyZoneBadge(buyZone(c))}
         </div>
       </td>
+      <td>${aiTakeCellHtml(c)}</td>
       <td><div class="row-btns"><button class="btn-xs btn-mention" data-id="${c.id}">+1</button><button class="btn-xs btn-unmention" data-unmention="${c.id}">−1</button><button class="btn-xs btn-edit-row" data-edit="${c.id}" style="background:rgba(245,200,66,0.08);border-color:rgba(245,200,66,0.25);color:var(--gold);">✎</button><button class="btn-xs btn-del" data-del="${c.id}">✕</button></div></td>`;
     tr.querySelector('[data-star]').addEventListener('click', e=>{ e.stopPropagation(); togglePin(c.id); });
     tr.querySelector('[data-edit]').addEventListener('click', e=>{ e.stopPropagation(); openModal(c.id); setTimeout(()=>{ if(!document.getElementById('edit-panel').classList.contains('open')) toggleEditPanel(); },100); });
@@ -3117,22 +3337,58 @@ async function openModal(id){
   // Then fetch fresh live price from TCGdex (upgrades display if successful)
   fetchCMPrice(c).catch(()=>{});
 
-  const ai=document.getElementById('m-ai');
+  // Momentum row
+  setTimeout(()=>{
+    const mr=document.getElementById('m-momentum-row');
+    if(mr) mr.innerHTML=momentumBadge(c)||'<span style="font-family:DM Mono,monospace;font-size:9px;color:var(--text-dimmer);">Market data loading…</span>';
+  },300);
+
+  _runModalAI(c);
+}
+
+async function _runModalAI(c){
+  const ai=document.getElementById('m-ai'); if(!ai) return;
   ai.innerHTML='<div class="ai-load"><span></span><span></span><span></span>&nbsp;Analyzing…</div>';
   try{
-    const p=c.priceHistory.map(x=>x.price);
-    const avg=(p.reduce((a,b)=>a+b,0)/p.length).toFixed(2);
-    const growth=p.length>1?(((p[p.length-1]-p[0])/p[0])*100).toFixed(1):0;
-    const prompt=`You are a TCG investment analyst. Give a sharp 2-3 sentence opinion in under 80 words — buy, hold, or avoid?
-Card: "${c.name}", Game: ${GAMES[c.game]||'TCG'}, Set: ${c.set}, Mentions: ${c.mentions}, Avg price: $${avg}, Price change: ${growth}%, Signal: ${signal(c).toUpperCase()}${c.notes?', Notes: '+c.notes:''}.`;
+    const p=c.priceHistory.map(x=>x.price).filter(v=>v>0);
+    const avg=p.length?(p.reduce((a,b)=>a+b,0)/p.length).toFixed(2):'n/a';
+    const growth=p.length>1?(((p[p.length-1]-p[0])/p[0])*100).toFixed(1):'n/a';
+    const cm=c.cmLive;
+    const mktDiff=cm&&cm.price&&p.length?((cm.price-p[p.length-1])/p[p.length-1]*100).toFixed(1)+'%':'n/a';
+    const bz=buyZone(c);
+    const pa=priceAnalysis(c);
+    const sid=_setIdFrom(c.set);
+    const pip=_agePip(sid);
+    const ageStr=_ageLabel(pip);
+    const prompt=`You are a sharp TCG investment analyst. Give a 2-3 sentence verdict under 80 words. Lead with **BUY** / **HOLD** / **WATCH** / **AVOID** in bold. Be direct.
+
+Card: "${c.name}" | Set: ${c.set}${sid?' ('+sid.toUpperCase()+' — '+ageStr+')':''}
+Mentions: ${c.mentions} | Signal: ${signal(c).toUpperCase()} | Trend: ${pa.trend}
+Avg logged: CHF ${avg} | Growth: ${growth}%
+CM market: ${cm&&cm.price?'€'+cm.price.toFixed(2):'n/a'} (${mktDiff} vs logged) | 7d: ${cm&&cm.avg7?'€'+cm.avg7.toFixed(2):'—'} | 30d: ${cm&&cm.avg30?'€'+cm.avg30.toFixed(2):'—'}
+Buy zone: ${bz.score}/4 | ${bz.reasons.join(', ')||'no signals'}${pa.dipThenFlat?' | dip then flat — entry signal':''}${c.notes?' | Notes: '+c.notes:''}`;
     const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
     const data=await res.json();
-    ai.textContent=data.content?.find(b=>b.type==='text')?.text||'No analysis.';
+    const text=data.content?.find(b=>b.type==='text')?.text||'No analysis.';
+    ai.innerHTML='<div style="line-height:1.7;font-size:12px;">'+text.replace(/\*\*(BUY|HOLD|WATCH|AVOID|SELL)\*\*/g,(m,w)=>{
+      const col=w==='BUY'?'var(--green)':w==='AVOID'||w==='SELL'?'var(--red)':w==='WATCH'?'var(--blue)':'var(--gold)';
+      return `<span style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:${col};letter-spacing:1px;">${w}</span>`;
+    })+'</div>';
   }catch{
-    const fb={hot:'High buzz and rising prices — strong buy signal.',warm:'Gaining traction. Consider a small position.',watch:'Early interest. Wait for more data.',cold:'Low activity. Hold off for now.'};
-    ai.textContent=fb[signal(c)];
+    const fb={hot:'High buzz and rising prices — strong buy signal.',warm:'Gaining traction. Consider a small position.',watch:'Early interest. Wait for more data.',cold:'Low activity. Hold off for now.',buydip:'Classic dip then flatten — this is typically the optimal entry window.'};
+    ai.innerHTML='<div style="line-height:1.7;font-size:12px;">'+(fb[signal(c)]||'Insufficient data for analysis.')+'</div>';
   }
 }
+
+function refreshModalAI(){
+  if(!_modalCardId) return;
+  const c=cards.find(x=>x.id===_modalCardId); if(!c) return;
+  delete _aiTakeCache[c.id];
+  _runModalAI(c);
+  const mr=document.getElementById('m-momentum-row');
+  if(mr) mr.innerHTML=momentumBadge(c)||'<span style="font-family:DM Mono,monospace;font-size:9px;color:var(--text-dimmer);">No market data yet</span>';
+}
+
 function closeModal(){
   document.getElementById('modal').style.display='none';
   document.getElementById('edit-panel').classList.remove('open');
