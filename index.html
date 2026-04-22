@@ -1182,23 +1182,24 @@ function parseSetField(raw){
 // ── Parse Cardmarket pricing from TCGdex card detail ────────────────
 // TCGdex format: detail.pricing.cardmarket.avg / avg-holo / trend / avg7 / avg30 / low
 function _parseCMPricing(detail, variation){
-  const isHolo = ['holo','full-art','alt-art','special','sir'].includes(String(variation||'').toLowerCase());
+  // Path 1: detail.pricing.cardmarket  (TCGdex v2 modern format)
   const nc = detail?.pricing?.cardmarket;
   if(nc && typeof nc === 'object'){
-    const price = isHolo ? (nc['avg-holo']??nc.avg??null) : (nc.avg??null);
+    // Take any non-zero price value — avg-holo preferred, then avg, then trend
+    const price = nc['avg-holo']??nc.avg??nc.trendPrice??nc.trend??null;
     if(price > 0) return {
       price,
-      trend: isHolo ? (nc['trend-holo']??nc.trend??null) : (nc.trend??null),
-      avg7:  isHolo ? (nc['avg7-holo'] ??nc.avg7 ??null) : (nc.avg7 ??null),
-      avg30: isHolo ? (nc['avg30-holo']??nc.avg30??null) : (nc.avg30??null),
-      low:   isHolo ? (nc['low-holo']  ??nc.low  ??null) : (nc.low  ??null),
+      trend: nc['trend-holo']??nc.trend??null,
+      avg7:  nc['avg7-holo'] ??nc.avg7 ??null,
+      avg30: nc['avg30-holo']??nc.avg30??null,
+      low:   nc['low-holo']  ??nc.low  ??null,
     };
   }
-  // Legacy: detail.cardmarket.prices.averageSellPrice
+  // Path 2: detail.cardmarket  (TCGdex legacy / some sets)
   const lc = detail?.cardmarket;
-  if(lc){
+  if(lc && typeof lc === 'object'){
     const p = lc.prices ?? lc;
-    const price = p.averageSellPrice ?? p.avg1 ?? p.avg ?? null;
+    const price = p.averageSellPrice ?? p.avg1 ?? p.avg ?? p.trendPrice ?? null;
     if(price > 0) return {
       price,
       trend: p.trendPrice??p.trend??null,
@@ -1206,6 +1207,11 @@ function _parseCMPricing(detail, variation){
       low:   p.lowPrice??p.low??null,
     };
   }
+  // Path 3: flat avg on detail root (some older TCGdex responses)
+  if(detail?.avg > 0) return {
+    price: detail.avg, trend: detail.trend??null,
+    avg7: detail.avg7??null, avg30: detail.avg30??null, low: detail.low??null,
+  };
   return {price:null,trend:null,avg7:null,avg30:null,low:null};
 }
 
@@ -1297,6 +1303,8 @@ async function scheduleCMBgFetch(forceAll){
         const {detail, cm} = res;
         // Save tcgdexId for future lookups even if no price
         if(detail.id && !c.tcgdexId){ c.tcgdexId=detail.id; }
+        console.log('[tcgdex]',c.name,c.set,'→ id:',detail.id,'cm.price:',cm.price,
+          '| pricing:', JSON.stringify(detail.pricing||detail.cardmarket||'none').slice(0,120));
         const data = {
           price:    cm.price||null,
           trend:    cm.trend||null,
@@ -1311,9 +1319,11 @@ async function scheduleCMBgFetch(forceAll){
         if(cm.price > 0){
           c.cmLive = data;
           fetched++;
+          console.log('[price ✅]',c.name,'→ €'+cm.price.toFixed(2));
         } else {
           noPrice++;
-          console.log('[no-price]',c.name,c.set,'— TCGdex has card but no CM data');
+          console.log('[no-price ⚠]',c.name,c.set,'— card found but no CM price on TCGdex');
+          console.log('  raw pricing:', JSON.stringify(detail.pricing||detail.cardmarket||'none'));
         }
       }catch(e){
         // Mark as attempted so we don't retry immediately
@@ -1323,11 +1333,9 @@ async function scheduleCMBgFetch(forceAll){
       }
     }));
 
-    // Progressive render every 6 cards + update status
-    if(i % 6 === 0){
-      render();
-      _updatePriceStatus(`Fetching prices: ${Math.min(i+2,toFetch.length)}/${toFetch.length}…`);
-    }
+    // Render after every batch so prices appear as they arrive
+    render();
+    _updatePriceStatus(`Fetching prices: ${Math.min(i+2,toFetch.length)}/${toFetch.length}…`);
     if(i+2 < toFetch.length) await new Promise(r=>setTimeout(r,300));
   }
 
