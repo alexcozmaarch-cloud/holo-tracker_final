@@ -1219,76 +1219,97 @@ function _parseCMPricing(detail, variation){
 // A: direct /sets/{setId}/{localId}   — fastest, exact
 // B: by saved tcgdexId                — second try
 // C: name search                      — last resort
+// ── Compose TCGdex card ID directly from the set field ───────────────────────
+// The set field (e.g. "swshp-SWSH144", "svp-SV291", "sv01 1") maps directly
+// to TCGdex card IDs — no brief lookup needed.
+function _composeCardId(setField){
+  const s = String(setField||'').trim();
+  if(!s) return null;
+  let setId, localId;
+  if(s.includes(' ')){
+    const sp = s.indexOf(' ');
+    setId = s.slice(0,sp).toLowerCase();
+    localId = s.slice(sp+1).trim();
+  } else {
+    const hy = s.lastIndexOf('-');
+    if(hy <= 0) return null;
+    setId = s.slice(0,hy).toLowerCase();
+    localId = s.slice(hy+1);
+  }
+  if(!setId || !localId) return null;
+  // svp promos: strip all leading letters (SV291→291, SVP208→208)
+  if(setId === 'svp') localId = localId.replace(/^[A-Za-z]+/,'');
+  return `${setId}-${localId}`;
+}
+
 async function fetchCardFromTCGdex(name, setField, variation, tcgdexId){
-  // TCGdex API note:
-  //   /sets/{setId}/{localId}  → returns Card Brief (id + metadata, NO pricing)
-  //   /cards/{id}              → returns full Card object WITH pricing.cardmarket
-  // So every path must end with a /cards/{id} fetch to get pricing data.
+  // TCGdex API: pricing ONLY exists on /cards/{id} (full card object).
+  // /sets/{setId}/{localId} returns a Card Brief — NO pricing field.
+  // Strategy A: compose card ID from set field, hit /cards/{id} directly (1 call).
 
-  const {setId, localId} = parseSetField(setField);
-
-  // ── A: set+number → resolve brief → fetch full card with pricing ──
-  if(setId && localId){
+  // ── A: compose ID → /cards/{id} ─────────────────────────────────
+  const cardId = _composeCardId(setField);
+  if(cardId){
     try{
-      const brief = await tcgdexFetch(`https://api.tcgdex.net/v2/en/sets/${encodeURIComponent(setId)}/${encodeURIComponent(localId)}`);
-      if(brief?.id){
-        const full = await tcgdexFetch(`https://api.tcgdex.net/v2/en/cards/${encodeURIComponent(brief.id)}`);
-        if(full?.id){
-          const cm = _parseCMPricing(full, variation);
-          console.log('[A ok]', name, '→', full.id, '| cm.price:', cm.price);
-          return {detail:full, cm};
-        }
+      const full = await tcgdexFetch(`https://api.tcgdex.net/v2/en/cards/${encodeURIComponent(cardId)}`);
+      if(full?.id){
+        const cm = _parseCMPricing(full, variation);
+        if(cm.price > 0){ console.log('[A ✅]',name,'→',full.id,'€'+cm.price.toFixed(2)); }
+        else { console.log('[A no-price]',name,'→',full.id,'(not on CM)'); }
+        return {detail:full, cm};
       }
-    }catch(e){ console.log('[A fail]', name, setField, '→', e.message); }
+    }catch(e){ console.log('[A fail]',name,cardId,'→',e.message); }
   }
 
-  // ── B: saved tcgdexId → fetch full card directly ──────────────────
-  if(tcgdexId){
+  // ── B: saved tcgdexId → /cards/{id} ──────────────────────────────
+  if(tcgdexId && tcgdexId !== cardId){
     try{
       const full = await tcgdexFetch(`https://api.tcgdex.net/v2/en/cards/${encodeURIComponent(tcgdexId)}`);
       if(full?.id){
         const cm = _parseCMPricing(full, variation);
-        console.log('[B ok]', name, '→', full.id, '| cm.price:', cm.price);
+        if(cm.price > 0){ console.log('[B ✅]',name,'→',full.id,'€'+cm.price.toFixed(2)); }
+        else { console.log('[B no-price]',name,'→',full.id); }
         return {detail:full, cm};
       }
-    }catch(e){ console.log('[B fail]', name, '→', e.message); }
+    }catch(e){ console.log('[B fail]',name,'→',e.message); }
   }
 
-  // ── C: name search → pick best match → fetch full card ───────────
+  // ── C: name search → best match → /cards/{id} ────────────────────
   if(name){
     try{
+      const {localId} = parseSetField(setField);
       const nq = `name=eq:${encodeURIComponent(name)}`;
       const lq = localId ? `&localId=eq:${encodeURIComponent(localId)}` : '';
       const list = await tcgdexFetch(`https://api.tcgdex.net/v2/en/cards?${nq}${lq}&pagination[itemsPerPage]=10`);
-      if(!Array.isArray(list) || !list.length) throw new Error('not found');
-      // Pick best match by variation/rarity if multiple results
+      if(!Array.isArray(list)||!list.length) throw new Error('not found');
       let match = list[0];
-      if(variation && list.length > 1){
-        const v = variation.toLowerCase();
-        const found = list.find(x=>{
-          const r = String(x.rarity||'').toLowerCase();
-          if(v==='holo')     return r.includes('holo') && !r.includes('reverse');
+      if(variation && list.length>1){
+        const v=variation.toLowerCase();
+        const found=list.find(x=>{
+          const r=String(x.rarity||'').toLowerCase();
+          if(v==='holo')     return r.includes('holo')&&!r.includes('reverse');
           if(v==='reverse')  return r.includes('reverse');
-          if(v==='full-art') return r.includes('full') || r.includes('illustration');
-          if(v==='alt-art')  return r.includes('special illustration') || r.includes('alt');
-          if(v==='normal')   return !r.includes('holo') && !r.includes('reverse');
+          if(v==='full-art') return r.includes('full')||r.includes('illustration');
+          if(v==='alt-art')  return r.includes('special illustration')||r.includes('alt');
+          if(v==='normal')   return !r.includes('holo')&&!r.includes('reverse');
           return false;
         });
-        if(found) match = found;
+        if(found) match=found;
       }
-      // match.id is the card ID — fetch full card for pricing
       const full = await tcgdexFetch(`https://api.tcgdex.net/v2/en/cards/${encodeURIComponent(match.id)}`);
       if(full?.id){
         const cm = _parseCMPricing(full, variation);
-        console.log('[C ok]', name, '→', full.id, '| cm.price:', cm.price);
+        if(cm.price > 0){ console.log('[C ✅]',name,'→',full.id,'€'+cm.price.toFixed(2)); }
+        else { console.log('[C no-price]',name,'→',full.id); }
         return {detail:full, cm};
       }
-    }catch(e){ console.log('[C fail]', name, '→', e.message); }
+    }catch(e){ console.log('[C fail]',name,'→',e.message); }
   }
 
-  console.log('[not found]', name, setField);
+  console.log('[not found]',name,setField);
   return null;
 }
+
 
 // ── CM Price fetch — aggressive: retry anything without a GOOD price ─
 // "Good price" = fetched successfully AND price > 0 AND < 3 days old
