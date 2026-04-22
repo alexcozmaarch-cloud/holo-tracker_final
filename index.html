@@ -2389,7 +2389,7 @@ function render(){
         const {localId} = parseSetField(c.set||'');
         const setName = (_setsData.find(s=>s.id===_setIdFrom(c.set))||{}).name||'';
         return setIdBadgeHtml(c.set)
-          + (localId ? `<span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text-dimmer);margin-left:5px;">${esc(localId)}</span>` : '')
+          + (localId ? `<span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text);margin-left:5px;">${esc(localId)}</span>` : '')
           + (setName ? `<div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text-dim);margin-top:3px;white-space:normal;">${esc(setName)}</div>` : '');
       })()}</td>
       <td>
