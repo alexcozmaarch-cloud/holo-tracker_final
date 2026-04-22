@@ -1452,46 +1452,199 @@ tr:hover .row-actions { opacity: 1; }
       <div class="step-item">
         <div class="step-num">1</div>
         <div class="step-body">
-          <div class="step-title">Create a Google Sheet</div>
-          <div class="step-desc">Go to <a href="https://sheets.google.com" target="_blank" style="color:var(--accent)">sheets.google.com</a>, create a blank spreadsheet, name it <strong>HOLO TCG Tracker</strong>.</div>
+          <div class="step-title">Open your Google Sheet</div>
+          <div class="step-desc">Open your existing <strong>HOLO TCG Tracker</strong> spreadsheet at <a href="https://sheets.google.com" target="_blank" style="color:var(--accent)">sheets.google.com</a>. Your data is safe — the new script is fully backward-compatible with your existing rows.</div>
         </div>
       </div>
       <div class="step-item">
         <div class="step-num">2</div>
         <div class="step-body">
           <div class="step-title">Open Apps Script &amp; paste code</div>
-          <div class="step-desc">In your sheet: <strong>Extensions → Apps Script</strong>. Delete everything, paste the code below, then Save (Ctrl+S).</div>
-          <div class="code-snippet" id="appsScriptCode" style="position:relative">const CARDS_SHEET='Cards';const SEALED_SHEET='Sealed';const COLL_SHEET='Collection';const PRICES_SHEET='Prices';
-function doGet(e){return respond({status:'ok',message:'Holo Tracker running'})}
-function doPost(e){try{const p=JSON.parse(e.postData.contents);const ss=SpreadsheetApp.getActiveSpreadsheet();
-let cs=ss.getSheetByName(CARDS_SHEET)||ss.insertSheet(CARDS_SHEET);
-let sl=ss.getSheetByName(SEALED_SHEET)||ss.insertSheet(SEALED_SHEET);
-let cl=ss.getSheetByName(COLL_SHEET)||ss.insertSheet(COLL_SHEET);
-let pr=ss.getSheetByName(PRICES_SHEET)||ss.insertSheet(PRICES_SHEET);
-if(p.action==='getAll')return respond({cards:getAllCards(cs),sealed:getAllSealed(sl),collection:getAllCollection(cl)});
-if(p.action==='upsert'){upsertCard(cs,p.card);return respond({cards:getAllCards(cs),sealed:getAllSealed(sl),collection:getAllCollection(cl)})}
-if(p.action==='delete'){deleteRow(cs,p.id);return respond({cards:getAllCards(cs),sealed:getAllSealed(sl),collection:getAllCollection(cl)})}
-if(p.action==='upsertSealed'){upsertSealed(sl,p.item);return respond({cards:getAllCards(cs),sealed:getAllSealed(sl),collection:getAllCollection(cl)})}
-if(p.action==='deleteSealed'){deleteRow(sl,p.id);return respond({cards:getAllCards(cs),sealed:getAllSealed(sl),collection:getAllCollection(cl)})}
-if(p.action==='upsertCollection'){upsertCollection(cl,p.item);return respond({cards:getAllCards(cs),sealed:getAllSealed(sl),collection:getAllCollection(cl)})}
-if(p.action==='deleteCollection'){deleteRow(cl,p.id);return respond({cards:getAllCards(cs),sealed:getAllSealed(sl),collection:getAllCollection(cl)})}
-}catch(err){return respond({error:err.message})}}
-function getAllCards(s){const r=s.getDataRange().getValues();if(r.length<=1)return[];return r.slice(1).map(x=>({id:x[0],name:x[1],set:x[2],game:x[3],notes:x[4],firstSeen:x[5],mentions:x[6],priceHistory:JSON.parse(x[7]||'[]')}))}
-function getAllSealed(s){const r=s.getDataRange().getValues();if(r.length<=1)return[];return r.slice(1).map(x=>({id:x[0],name:x[1],game:x[2],type:x[3],set:x[4],notes:x[5],firstSeen:x[6],lastSeen:x[7],mentions:x[8],lastPrice:x[9]||null,priceHistory:JSON.parse(x[10]||'[]')}))}
-function getAllCollection(s){const r=s.getDataRange().getValues();if(r.length<=1)return[];return r.slice(1).map(x=>({id:x[0],cardName:x[1],set:x[2],game:x[3],condition:x[4],rawCondition:x[5]||null,variation:x[6]||null,purchasePrice:x[7]||null,purchaseCurrency:x[8]||'CHF',purchaseDate:x[9]||null,notes:x[10]||'',addedAt:x[11]||''}))}
-function upsertCard(s,c){const r=s.getDataRange().getValues();for(let i=1;i<r.length;i++){if(r[i][0]==c.id){s.getRange(i+1,1,1,8).setValues([[c.id,c.name,c.set,c.game||'',c.notes||'',c.firstSeen,c.mentions,JSON.stringify(c.priceHistory)]]);return}}s.appendRow([c.id,c.name,c.set,c.game||'',c.notes||'',c.firstSeen,c.mentions,JSON.stringify(c.priceHistory)])}
-function upsertSealed(s,i){const ph=JSON.stringify(i.priceHistory||[]);const r=s.getDataRange().getValues();for(let x=1;x<r.length;x++){if(r[x][0]==i.id){s.getRange(x+1,1,1,11).setValues([[i.id,i.name,i.game||'',i.type||'',i.set||'',i.notes||'',i.firstSeen,i.lastSeen,i.mentions,i.lastPrice||'',ph]]);return}}s.appendRow([i.id,i.name,i.game||'',i.type||'',i.set||'',i.notes||'',i.firstSeen,i.lastSeen,i.mentions,i.lastPrice||'',ph])}
-function upsertCollection(s,i){const row=[i.id,i.cardName||'',i.set||'',i.game||'',i.condition||'raw',i.rawCondition||'',i.variation||'',i.purchasePrice||'',i.purchaseCurrency||'CHF',i.purchaseDate||'',i.notes||'',i.addedAt||''];const r=s.getDataRange().getValues();for(let x=1;x<r.length;x++){if(r[x][0]==i.id){s.getRange(x+1,1,1,12).setValues([row]);return}}s.appendRow(row)}
-function deleteRow(s,id){const r=s.getDataRange().getValues();for(let i=r.length-1;i>=1;i--){if(r[i][0]==id){s.deleteRow(i+1);return}}}
-function respond(d){return ContentService.createTextOutput(JSON.stringify(d)).setMimeType(ContentService.MimeType.JSON)}</div>
+          <div class="step-desc">In your sheet: <strong>Extensions → Apps Script</strong>. Select all existing code, delete it, paste the updated code below, then Save (Ctrl+S). This replaces the old script with the v2 version.</div>
+          <div class="code-snippet" id="appsScriptCode" style="position:relative">// ── Holo Tracker Apps Script v2 ──────────────────────────────
+// Paste this entire block into Extensions → Apps Script, save, then
+// Deploy → New deployment → Web app → Execute as Me → Anyone → Deploy
+const CARDS_SHEET  = 'Cards';
+const SEALED_SHEET = 'Sealed';
+const COLL_SHEET   = 'Collection';
+
+// Cards columns (16 total):
+// 0:id  1:name  2:set  3:game  4:notes  5:firstSeen  6:lastSeen  7:mentions
+// 8:priceHistory  9:tcgdexId  10:variation  11:livePrice  12:livePriceCurrency
+// 13:livePriceFetchedAt  14:priceAvg7  15:priceAvg30
+
+function doGet(e) {
+  return respond({ status: 'ok', message: 'Holo Tracker v2 running' });
+}
+
+function doPost(e) {
+  try {
+    const p  = JSON.parse(e.postData.contents);
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const cs = ss.getSheetByName(CARDS_SHEET)  || ss.insertSheet(CARDS_SHEET);
+    const sl = ss.getSheetByName(SEALED_SHEET) || ss.insertSheet(SEALED_SHEET);
+    const cl = ss.getSheetByName(COLL_SHEET)   || ss.insertSheet(COLL_SHEET);
+
+    if (p.action === 'getAll') {
+      return respond({ cards: getAllCards(cs), sealed: getAllSealed(sl), collection: getAllCollection(cl) });
+    }
+    if (p.action === 'batchUpsertCards') {
+      ensureCardHeaders(cs);
+      (p.cards || []).forEach(c => upsertCard(cs, c));
+      // Remove rows whose IDs are no longer in the app
+      pruneRows(cs, (p.cards || []).map(c => c.id));
+      return respond({ ok: true });
+    }
+    if (p.action === 'upsert')         { ensureCardHeaders(cs); upsertCard(cs, p.card);          return respond({ ok: true }); }
+    if (p.action === 'delete')         { deleteRow(cs, p.id);                                     return respond({ ok: true }); }
+    if (p.action === 'upsertSealed')   { upsertSealed(sl, p.item);                               return respond({ ok: true }); }
+    if (p.action === 'deleteSealed')   { deleteRow(sl, p.id);                                     return respond({ ok: true }); }
+    if (p.action === 'upsertCollection') { upsertCollection(cl, p.item);                         return respond({ ok: true }); }
+    if (p.action === 'deleteCollection') { deleteRow(cl, p.id);                                   return respond({ ok: true }); }
+    return respond({ error: 'Unknown action' });
+  } catch(err) {
+    return respond({ error: err.message });
+  }
+}
+
+function ensureCardHeaders(s) {
+  if (s.getLastRow() === 0) {
+    s.appendRow(['id','name','set','game','notes','firstSeen','lastSeen','mentions',
+      'priceHistory','tcgdexId','variation','livePrice','livePriceCurrency',
+      'livePriceFetchedAt','priceAvg7','priceAvg30']);
+  }
+}
+
+function cardToRow(c) {
+  return [
+    c.id || '', c.name || '', c.set || '', c.game || '', c.notes || '',
+    c.firstSeen || '', c.lastSeen || '', Number(c.mentions) || 0,
+    JSON.stringify(c.priceHistory || []),
+    c.tcgdexId || '', c.variation || '',
+    c.livePrice != null ? Number(c.livePrice) : '',
+    c.livePriceCurrency || '',
+    c.livePriceFetchedAt || '',
+    c.priceAvg7  != null ? Number(c.priceAvg7)  : '',
+    c.priceAvg30 != null ? Number(c.priceAvg30) : ''
+  ];
+}
+
+function getAllCards(s) {
+  const r = s.getDataRange().getValues();
+  if (r.length <= 1) return [];
+  // Skip header row; tolerate old 8-column rows by defaulting missing columns.
+  // OLD schema (8 cols): id, name, set, game, notes, firstSeen, mentions, priceHistory
+  // NEW schema (16 cols): id, name, set, game, notes, firstSeen, lastSeen, mentions, priceHistory, ...
+  // Detect old schema: col 6 is a number (mentions) and col 7 is JSON array string (priceHistory)
+  return r.slice(1).filter(x => x[0]).map(x => {
+    const isOldSchema = x.length <= 8 || (typeof Number(x[6]) === 'number' && !isNaN(Number(x[6])) && String(x[6]).trim() !== '' && !String(x[6]).startsWith('[') && (x[8] === undefined || x[8] === ''));
+    if (isOldSchema) {
+      // Old layout: col6=mentions, col7=priceHistory
+      return {
+        id: x[0], name: x[1], set: x[2], game: x[3], notes: x[4],
+        firstSeen: x[5], lastSeen: x[5], mentions: Number(x[6]) || 0,
+        priceHistory: (function() { try { return JSON.parse(x[7] || '[]'); } catch(e) { return []; } })(),
+        tcgdexId: null, variation: null, livePrice: null,
+        livePriceCurrency: null, livePriceFetchedAt: null,
+        priceAvg7: null, priceAvg30: null
+      };
+    }
+    // New layout: col6=lastSeen, col7=mentions, col8=priceHistory
+    return {
+      id: x[0], name: x[1], set: x[2], game: x[3], notes: x[4],
+      firstSeen: x[5], lastSeen: x[6] || x[5], mentions: Number(x[7]) || 0,
+      priceHistory: (function() { try { return JSON.parse(x[8] || '[]'); } catch(e) { return []; } })(),
+      tcgdexId:           x[9]  || null,
+      variation:          x[10] || null,
+      livePrice:          x[11] !== '' && x[11] != null ? Number(x[11]) : null,
+      livePriceCurrency:  x[12] || null,
+      livePriceFetchedAt: x[13] || null,
+      priceAvg7:          x[14] !== '' && x[14] != null ? Number(x[14]) : null,
+      priceAvg30:         x[15] !== '' && x[15] != null ? Number(x[15]) : null
+    };
+  });
+}
+
+function getAllSealed(s) {
+  const r = s.getDataRange().getValues();
+  if (r.length <= 1) return [];
+  return r.slice(1).filter(x => x[0]).map(x => ({
+    id: x[0], name: x[1], game: x[2], type: x[3], set: x[4], notes: x[5],
+    firstSeen: x[6], lastSeen: x[7], mentions: Number(x[8]) || 0,
+    lastPrice: x[9] || null, priceHistory: JSON.parse(x[10] || '[]')
+  }));
+}
+
+function getAllCollection(s) {
+  const r = s.getDataRange().getValues();
+  if (r.length <= 1) return [];
+  return r.slice(1).filter(x => x[0]).map(x => ({
+    id: x[0], cardName: x[1], set: x[2], game: x[3], condition: x[4],
+    rawCondition: x[5] || null, variation: x[6] || null,
+    purchasePrice: x[7] || null, purchaseCurrency: x[8] || 'CHF',
+    purchaseDate: x[9] || null, notes: x[10] || '', addedAt: x[11] || ''
+  }));
+}
+
+function upsertCard(s, c) {
+  const row = cardToRow(c);
+  const r = s.getDataRange().getValues();
+  for (let i = 1; i < r.length; i++) {
+    if (r[i][0] == c.id) {
+      s.getRange(i + 1, 1, 1, 16).setValues([row]);
+      return;
+    }
+  }
+  s.appendRow(row);
+}
+
+function pruneRows(s, keepIds) {
+  const r = s.getDataRange().getValues();
+  for (let i = r.length - 1; i >= 1; i--) {
+    if (r[i][0] && !keepIds.includes(String(r[i][0]))) {
+      s.deleteRow(i + 1);
+    }
+  }
+}
+
+function upsertSealed(s, i) {
+  const ph = JSON.stringify(i.priceHistory || []);
+  const row = [i.id,i.name,i.game||'',i.type||'',i.set||'',i.notes||'',i.firstSeen,i.lastSeen,i.mentions,i.lastPrice||'',ph];
+  const r = s.getDataRange().getValues();
+  for (let x = 1; x < r.length; x++) {
+    if (r[x][0] == i.id) { s.getRange(x+1,1,1,11).setValues([row]); return; }
+  }
+  s.appendRow(row);
+}
+
+function upsertCollection(s, i) {
+  const row = [i.id,i.cardName||'',i.set||'',i.game||'',i.condition||'raw',i.rawCondition||'',
+    i.variation||'',i.purchasePrice||'',i.purchaseCurrency||'CHF',i.purchaseDate||'',i.notes||'',i.addedAt||''];
+  const r = s.getDataRange().getValues();
+  for (let x = 1; x < r.length; x++) {
+    if (r[x][0] == i.id) { s.getRange(x+1,1,1,12).setValues([row]); return; }
+  }
+  s.appendRow(row);
+}
+
+function deleteRow(s, id) {
+  const r = s.getDataRange().getValues();
+  for (let i = r.length - 1; i >= 1; i--) {
+    if (r[i][0] == id) { s.deleteRow(i + 1); return; }
+  }
+}
+
+function respond(d) {
+  return ContentService.createTextOutput(JSON.stringify(d)).setMimeType(ContentService.MimeType.JSON);
+}</div>
           <button class="copy-btn" onclick="copyCode()">Copy</button>
         </div>
       </div>
       <div class="step-item">
         <div class="step-num">3</div>
         <div class="step-body">
-          <div class="step-title">Deploy as Web App</div>
-          <div class="step-desc">Click <strong>Deploy → New deployment</strong> → select Web app → Execute as: <strong>Me</strong> → Who has access: <strong>Anyone</strong> → Deploy → Authorize → copy URL ending in <code style="color:var(--teal)">/exec</code></div>
+          <div class="step-title">Deploy / Redeploy as Web App</div>
+          <div class="step-desc">Click <strong>Deploy → New deployment</strong> → select <strong>Web app</strong> → Execute as: <strong>Me</strong> → Who has access: <strong>Anyone</strong> → Deploy → Authorize → copy the URL ending in <code style="color:var(--teal)">/exec</code>. (If you had a previous deployment, create a new one — you’ll get a new URL.)</div>
         </div>
       </div>
       <div class="step-item">
@@ -3704,12 +3857,30 @@ async function syncData() {
 async function syncToSheets() {
   if (!state.sheetsUrl) return;
   try {
-    await fetch(state.sheetsUrl, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'upsert', card: state.cards[0] }), // simplified
-    });
+    // Full batch sync — send all cards at once
+    if (state.cards.length > 0) {
+      await fetch(state.sheetsUrl, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'batchUpsertCards', cards: state.cards }),
+      });
+    }
+    // Sync sealed items one-by-one (no batch endpoint for sealed)
+    for (const item of state.sealed) {
+      await fetch(state.sheetsUrl, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'upsertSealed', item }),
+      });
+    }
+    // Sync collection items one-by-one
+    for (const item of state.collection) {
+      await fetch(state.sheetsUrl, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'upsertCollection', item }),
+      });
+    }
   } catch (e) {
     // silent fail — data is in memory
+    console.warn('syncToSheets failed:', e.message);
   }
 }
 
