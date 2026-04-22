@@ -1298,25 +1298,200 @@ tr:hover .row-actions { opacity: 1; }
 ::-webkit-scrollbar-thumb:hover { background: var(--border-2); }
 
 /* =========================================
-   RESPONSIVE
+   RESPONSIVE — MOBILE
    ========================================= */
 @media (max-width: 768px) {
+
+  /* ── App shell: sidebar hidden, full-width main ── */
   .app {
-    grid-template-columns: 0 1fr;
+    grid-template-columns: 1fr;
     position: relative;
   }
+
+  /* ── Sidebar: slides in as drawer overlay ── */
   .sidebar {
     position: fixed;
-    left: -240px;
+    left: -260px;
     top: 0;
     bottom: 0;
-    width: 240px;
+    width: 260px;
     transition: left var(--transition-slow);
-    z-index: 50;
+    z-index: 200;
     box-shadow: var(--shadow-lg);
   }
   .app.mobile-nav-open .sidebar { left: 0; }
+  /* Dim overlay when sidebar open */
+  #mobileNavOverlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 199;
+  }
+  .app.mobile-nav-open #mobileNavOverlay { display: block; }
+
+  /* ── Topbar ── */
+  .topbar {
+    padding: 0 12px;
+    height: 52px;
+    box-sizing: border-box;
+  }
   .topbar-kpis { display: none; }
+  #mobileMenuBtn { display: flex !important; flex-shrink: 0; }
+  .topbar-title { font-size: var(--text-base); }
+  .topbar-actions { gap: 6px; flex-shrink: 0; }
+  .topbar-actions .btn span, .topbar-actions .btn-label { display: none; }
+  .topbar-actions .btn {
+    width: 36px; height: 36px;
+    min-width: 36px;
+    padding: 0;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .topbar-actions .btn svg { margin: 0; }
+
+  /* ── Main area ── */
+  .main-area {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  /* ── Form card: collapsible ── */
+  .form-card {
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    border-top: none;
+    padding: var(--space-3) var(--space-3) 0;
+  }
+  .form-card-header {
+    cursor: pointer;
+    margin-bottom: 0;
+    padding-bottom: var(--space-3);
+    user-select: none;
+  }
+  .form-card-header::after {
+    content: '+';
+    margin-left: auto;
+    font-size: 1.2rem;
+    color: var(--text-faint);
+    font-weight: 300;
+    line-height: 1;
+  }
+  .form-card.expanded .form-card-header::after { content: '\2212'; }
+  .form-grid {
+    display: none;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-2);
+    padding-bottom: var(--space-3);
+  }
+  .form-card.expanded .form-grid { display: grid; }
+  .form-group.span-2 { grid-column: 1 / -1; }
+
+  /* ── Filter bar ── */
+  .filter-bar {
+    padding: var(--space-2) var(--space-3);
+    gap: var(--space-2);
+    flex-wrap: wrap;
+  }
+  .search-wrap { width: 100%; }
+  .filter-pills { order: 3; width: 100%; overflow-x: auto; flex-wrap: nowrap; padding-bottom: 2px; }
+  .filter-pills::-webkit-scrollbar { display: none; }
+  .filter-bar > div:last-child { order: 2; margin-left: 0; width: 100%; justify-content: space-between; flex-wrap: wrap; gap: var(--space-2); }
+  #refreshPricesBtn .btn-label, #refreshPricesBtn span:not(svg) { font-size: 11px; }
+  /* Game/sort selects don't overflow */
+  .filter-bar select { max-width: 130px; font-size: 11px; }
+
+  /* ── Table: hide columns, fit to screen on mobile ── */
+  #trackerTable .table-scroll {
+    overflow-x: hidden;
+  }
+  /* Hide: 7D(4), 30D(5), GAP(6), MENTIONS(7), Actions(9) — keep Card, Game, LivePrice, Signal */
+  #trackerTable table th:nth-child(4),
+  #trackerTable table td:nth-child(4),
+  #trackerTable table th:nth-child(5),
+  #trackerTable table td:nth-child(5),
+  #trackerTable table th:nth-child(6),
+  #trackerTable table td:nth-child(6),
+  #trackerTable table th:nth-child(7),
+  #trackerTable table td:nth-child(7),
+  #trackerTable table th:nth-child(9),
+  #trackerTable table td:nth-child(9) {
+    display: none !important;
+  }
+  /* Fit tracker table to mobile screen: 3 cols = Card | Game | Price + Signal */
+  #trackerTable table { width: 100%; table-layout: fixed; min-width: unset; }
+  #trackerTable table th:nth-child(1), #trackerTable table td:nth-child(1) { width: 35%; padding-left: 12px; }
+  #trackerTable table th:nth-child(2), #trackerTable table td:nth-child(2) { width: 22%; }
+  #trackerTable table th:nth-child(3), #trackerTable table td:nth-child(3) { width: 22%; }
+  #trackerTable table th:nth-child(8), #trackerTable table td:nth-child(8) { width: 21%; padding: 4px 12px 4px 2px; overflow: visible; }
+  #trackerTable table th, #trackerTable table td {
+    padding: var(--space-2) 6px;
+    font-size: var(--text-xs);
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  #trackerTable table th:first-child { padding-left: 12px; }
+  .card-name { font-size: var(--text-sm); }
+  .card-notes { display: none; }
+  .signal-badge { font-size: 9px; padding: 2px 4px; white-space: nowrap; }
+  /* Compact price cell on mobile */
+  .price-cell { gap: 1px; }
+  .price-main { font-size: var(--text-xs) !important; }
+  /* LIVE indicator smaller */
+  #trackerTable table td:nth-child(3) span[style*='teal'] { font-size: 8px !important; }
+
+  /* ── Drawer: full screen bottom sheet on mobile ── */
+  .drawer {
+    width: 100% !important;
+    top: auto;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    height: 92dvh;
+    border-left: none;
+    border-top: 1px solid var(--border);
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    transform: translateY(100%) !important;
+  }
+  .drawer-overlay.open .drawer {
+    transform: translateY(0) !important;
+  }
+  /* Drag handle pill */
+  .drawer::before {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 4px;
+    background: var(--border-2);
+    border-radius: 2px;
+    margin: var(--space-2) auto 0;
+    flex-shrink: 0;
+  }
+  .drawer-header {
+    padding: var(--space-3) var(--space-4);
+  }
+  .drawer-body {
+    padding: var(--space-3) var(--space-4);
+  }
+  .price-boxes {
+    grid-template-columns: 1fr 1fr;
+  }
+  .drawer-fields {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  /* ── Sheets / settings modals ── */
+  .modal-box {
+    width: calc(100vw - var(--space-6));
+    max-height: 88dvh;
+    overflow-y: auto;
+  }
+
+  /* ── Section padding ── */
+  .section-content { padding: var(--space-2); }
+  .page { padding: 0; }
 }
 
 /* =========================================
@@ -1830,6 +2005,9 @@ function respond(d) {
     </div>
   </aside>
 
+  <!-- Mobile nav overlay (tap to close) -->
+  <div id="mobileNavOverlay" onclick="toggleMobileNav()"></div>
+
   <!-- MAIN AREA -->
   <main class="main-area">
     <!-- TOP BAR -->
@@ -1856,11 +2034,11 @@ function respond(d) {
       <div class="topbar-actions">
         <button class="btn btn-secondary btn-sm" onclick="syncData()">
           <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.59"/></svg>
-          Sync
+          <span class="btn-label">Sync</span>
         </button>
         <button class="btn btn-secondary btn-sm" onclick="exportCSV()">
           <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          CSV
+          <span class="btn-label">CSV</span>
         </button>
       </div>
     </header>
@@ -2555,6 +2733,14 @@ function toggleSidebar() {
 function toggleMobileNav() {
   document.getElementById('app').classList.toggle('mobile-nav-open');
 }
+
+// ── Mobile: form-card collapsible toggle ──
+document.querySelectorAll('.form-card-header').forEach(header => {
+  header.addEventListener('click', () => {
+    if (window.innerWidth >= 768) return; // desktop: always expanded
+    header.closest('.form-card').classList.toggle('expanded');
+  });
+});
 
 // Show mobile menu btn on small screens
 if (window.innerWidth < 768) {
@@ -4420,16 +4606,14 @@ document.addEventListener('keydown', e => {
 //   INIT
 // =========================================
 function init() {
-  // Restore saved Sheets URL — stays connected across refreshes
+  // Restore saved Sheets URL and auto-sync (GitHub Pages version)
   try {
-    const saved = localStorage.getItem('holoTrackerSheetsUrl');
-    if (saved) {
-      state.sheetsUrl = saved;
-      updateSheetsStatus(true);
-      // Pre-fill the input so user can see the saved URL
+    const savedUrl = localStorage.getItem('holoTrackerSheetsUrl');
+    if (savedUrl) {
+      state.sheetsUrl = savedUrl;
       const input = document.getElementById('sheetsUrlInput');
-      if (input) input.value = saved;
-      // Auto-sync on load
+      if (input) input.value = savedUrl;
+      updateSheetsStatus(true);
       syncData();
     }
   } catch(e) {}
