@@ -1044,7 +1044,7 @@ function clearCache(){ _cache = {}; }
 // Loaded into c.cmLive on startup via getAll — no per-session fetching.
 // Signal and buyZone use c.cmLive transparently whether fresh or week-old.
 
-const PRICES_SHEET_KEY = 'holo_cm_prices_v1'; // localStorage key
+const PRICES_SHEET_KEY = 'holo_cm_prices_v2'; // v2: uses /cards/{id} directly // localStorage key
 let _cmPrices = {}; // { cardId: {price,trend,avg7,avg30,low,week,tcgdexId} }
 
 // ── TCGdex SETS — declared here to avoid "before initialization" errors ───────
@@ -1182,46 +1182,46 @@ function parseSetField(raw){
 // ── Parse Cardmarket pricing from TCGdex card detail ────────────────
 // TCGdex format: detail.pricing.cardmarket.avg / avg-holo / trend / avg7 / avg30 / low
 function _parseCMPricing(detail, variation){
-  // TCGdex v2 confirmed shape (from docs):
-  //   detail.pricing.cardmarket.avg       — non-holo average
-  //   detail.pricing.cardmarket.avg-holo  — holo average
-  //   detail.pricing.cardmarket.trend / trend-holo
-  //   detail.pricing.cardmarket.avg7 / avg7-holo
-  //   detail.pricing.cardmarket.avg30 / avg30-holo
-  //   detail.pricing.cardmarket.low / low-holo
-  // If card is not listed on Cardmarket, pricing.cardmarket is omitted entirely.
-  const cm = detail?.pricing?.cardmarket;
-  if(cm && typeof cm === 'object'){
-    // Prefer holo price if available, fall back to non-holo avg
-    const price = (cm['avg-holo'] > 0 ? cm['avg-holo'] : null) ?? cm.avg ?? cm.trend ?? null;
+  // Path 1: detail.pricing.cardmarket  (TCGdex v2 modern format)
+  const nc = detail?.pricing?.cardmarket;
+  if(nc && typeof nc === 'object'){
+    // Take any non-zero price value — avg-holo preferred, then avg, then trend
+    const price = nc['avg-holo']??nc.avg??nc.trendPrice??nc.trend??null;
     if(price > 0) return {
       price,
-      trend: cm['trend-holo'] ?? cm.trend ?? null,
-      avg7:  cm['avg7-holo']  ?? cm.avg7  ?? null,
-      avg30: cm['avg30-holo'] ?? cm.avg30 ?? null,
-      low:   cm['low-holo']   ?? cm.low   ?? null,
+      trend: nc['trend-holo']??nc.trend??null,
+      avg7:  nc['avg7-holo'] ??nc.avg7 ??null,
+      avg30: nc['avg30-holo']??nc.avg30??null,
+      low:   nc['low-holo']  ??nc.low  ??null,
     };
   }
-  // Legacy fallback for older cached data shapes
+  // Path 2: detail.cardmarket  (TCGdex legacy / some sets)
   const lc = detail?.cardmarket;
   if(lc && typeof lc === 'object'){
     const p = lc.prices ?? lc;
-    const price = p.averageSellPrice ?? p.avg ?? null;
+    const price = p.averageSellPrice ?? p.avg1 ?? p.avg ?? p.trendPrice ?? null;
     if(price > 0) return {
-      price, trend: p.trendPrice ?? p.trend ?? null,
-      avg7: p.avg7 ?? null, avg30: p.avg30 ?? null, low: p.lowPrice ?? p.low ?? null,
+      price,
+      trend: p.trendPrice??p.trend??null,
+      avg7:  p.avg7??null, avg30:p.avg30??null,
+      low:   p.lowPrice??p.low??null,
     };
   }
-  return {price:null, trend:null, avg7:null, avg30:null, low:null};
+  // Path 3: flat avg on detail root (some older TCGdex responses)
+  if(detail?.avg > 0) return {
+    price: detail.avg, trend: detail.trend??null,
+    avg7: detail.avg7??null, avg30: detail.avg30??null, low: detail.low??null,
+  };
+  return {price:null,trend:null,avg7:null,avg30:null,low:null};
 }
 
 // ── Fetch one card from TCGdex, return {detail, cm} ─────────────────
 // A: direct /sets/{setId}/{localId}   — fastest, exact
 // B: by saved tcgdexId                — second try
 // C: name search                      — last resort
-// ── Compose TCGdex card ID directly from the set field ───────────────────────
-// The set field (e.g. "swshp-SWSH144", "svp-SV291", "sv01 1") maps directly
-// to TCGdex card IDs — no brief lookup needed.
+// ── Compose TCGdex card ID directly from the stored set field ────────────────
+// e.g. "swshp-SWSH144" → "swshp-SWSH144", "svp-SV291" → "svp-291", "sv01 1" → "sv01-1"
+// This lets us call /cards/{id} directly — the only endpoint with pricing data.
 function _composeCardId(setField){
   const s = String(setField||'').trim();
   if(!s) return null;
@@ -1237,44 +1237,41 @@ function _composeCardId(setField){
     localId = s.slice(hy+1);
   }
   if(!setId || !localId) return null;
-  // svp promos: strip all leading letters (SV291→291, SVP208→208)
+  // svp promos: strip all leading letters from localId (SV291→291, SVP208→208)
   if(setId === 'svp') localId = localId.replace(/^[A-Za-z]+/,'');
   return `${setId}-${localId}`;
 }
 
 async function fetchCardFromTCGdex(name, setField, variation, tcgdexId){
-  // TCGdex API: pricing ONLY exists on /cards/{id} (full card object).
-  // /sets/{setId}/{localId} returns a Card Brief — NO pricing field.
-  // Strategy A: compose card ID from set field, hit /cards/{id} directly (1 call).
+  // IMPORTANT: /sets/{setId}/{localId} returns a Card Brief with NO pricing data.
+  // Pricing only exists on /cards/{id} (full card object). All paths use /cards/{id}.
 
-  // ── A: compose ID → /cards/{id} ─────────────────────────────────
+  // ── A: compose card ID from set field → /cards/{id} (1 call, has pricing) ──
   const cardId = _composeCardId(setField);
   if(cardId){
     try{
-      const full = await tcgdexFetch(`https://api.tcgdex.net/v2/en/cards/${encodeURIComponent(cardId)}`);
-      if(full?.id){
-        const cm = _parseCMPricing(full, variation);
-        if(cm.price > 0){ console.log('[A ✅]',name,'→',full.id,'€'+cm.price.toFixed(2)); }
-        else { console.log('[A no-price]',name,'→',full.id,'(not on CM)'); }
-        return {detail:full, cm};
+      const d = await tcgdexFetch(`https://api.tcgdex.net/v2/en/cards/${encodeURIComponent(cardId)}`);
+      if(d?.id){
+        const cm = _parseCMPricing(d, variation);
+        console.log('[A]',name,'→',d.id,'cm.price:',cm.price);
+        return {detail:d, cm};
       }
     }catch(e){ console.log('[A fail]',name,cardId,'→',e.message); }
   }
 
-  // ── B: saved tcgdexId → /cards/{id} ──────────────────────────────
+  // ── B: saved tcgdexId → /cards/{id} ──────────────────────────────────────
   if(tcgdexId && tcgdexId !== cardId){
     try{
-      const full = await tcgdexFetch(`https://api.tcgdex.net/v2/en/cards/${encodeURIComponent(tcgdexId)}`);
-      if(full?.id){
-        const cm = _parseCMPricing(full, variation);
-        if(cm.price > 0){ console.log('[B ✅]',name,'→',full.id,'€'+cm.price.toFixed(2)); }
-        else { console.log('[B no-price]',name,'→',full.id); }
-        return {detail:full, cm};
+      const d = await tcgdexFetch(`https://api.tcgdex.net/v2/en/cards/${encodeURIComponent(tcgdexId)}`);
+      if(d?.id){
+        const cm = _parseCMPricing(d, variation);
+        console.log('[B]',name,'→',d.id,'cm.price:',cm.price);
+        return {detail:d, cm};
       }
     }catch(e){ console.log('[B fail]',name,'→',e.message); }
   }
 
-  // ── C: name search → best match → /cards/{id} ────────────────────
+  // ── C: name search → best match → /cards/{id} ────────────────────────────
   if(name){
     try{
       const {localId} = parseSetField(setField);
@@ -1296,12 +1293,11 @@ async function fetchCardFromTCGdex(name, setField, variation, tcgdexId){
         });
         if(found) match=found;
       }
-      const full = await tcgdexFetch(`https://api.tcgdex.net/v2/en/cards/${encodeURIComponent(match.id)}`);
-      if(full?.id){
-        const cm = _parseCMPricing(full, variation);
-        if(cm.price > 0){ console.log('[C ✅]',name,'→',full.id,'€'+cm.price.toFixed(2)); }
-        else { console.log('[C no-price]',name,'→',full.id); }
-        return {detail:full, cm};
+      const d = await tcgdexFetch(`https://api.tcgdex.net/v2/en/cards/${encodeURIComponent(match.id)}`);
+      if(d?.id){
+        const cm = _parseCMPricing(d, variation);
+        console.log('[C]',name,'→',d.id,'cm.price:',cm.price);
+        return {detail:d, cm};
       }
     }catch(e){ console.log('[C fail]',name,'→',e.message); }
   }
