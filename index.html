@@ -1066,7 +1066,7 @@ function clearCache(){ _cache = {}; }
 // Loaded into c.cmLive on startup via getAll — no per-session fetching.
 // Signal and buyZone use c.cmLive transparently whether fresh or week-old.
 
-const PRICES_SHEET_KEY = 'holo_cm_prices_v2'; // v2: uses /cards/{id} directly // localStorage key
+const PRICES_SHEET_KEY = 'holo_cm_prices_v3'; // v3: fixed promo ID mapping + momentum // localStorage key
 let _cmPrices = {}; // { cardId: {price,trend,avg7,avg30,low,week,tcgdexId} }
 
 // ── TCGdex SETS — declared here to avoid "before initialization" errors ───────
@@ -1250,17 +1250,30 @@ function _composeCardId(setField){
   let setId, localId;
   if(s.includes(' ')){
     const sp = s.indexOf(' ');
-    setId = s.slice(0,sp).toLowerCase();
+    setId   = s.slice(0,sp).toLowerCase();
     localId = s.slice(sp+1).trim();
   } else {
     const hy = s.lastIndexOf('-');
     if(hy <= 0) return null;
-    setId = s.slice(0,hy).toLowerCase();
+    setId   = s.slice(0,hy).toLowerCase();
     localId = s.slice(hy+1);
   }
   if(!setId || !localId) return null;
-  // svp promos: strip all leading letters from localId (SV291→291, SVP208→208)
-  if(setId === 'svp') localId = localId.replace(/^[A-Za-z]+/,'');
+
+  // svp (SV Black Star Promos): strip leading letters + leading zeros → bare number
+  // SV291→291, SVP208→208, 027→27
+  if(setId === 'svp'){
+    localId = localId.replace(/^[A-Za-z]+/,'');          // strip SV/SVP prefix
+    if(/^\d+$/.test(localId)) localId = String(parseInt(localId,10)); // 027→27
+  }
+  // swshp/smp/xyp/bwp: if bare number given, add the required prefix
+  // 'SWSHP 144' → swshp-SWSH144, 'SMP 215' → smp-SM215
+  else {
+    const PROMO_PREFIX = {swshp:'SWSH', smp:'SM', xyp:'XY', bwp:'BW'};
+    const pfx = PROMO_PREFIX[setId];
+    if(pfx && /^\d+$/.test(localId)) localId = pfx + localId;
+  }
+
   return `${setId}-${localId}`;
 }
 
@@ -2295,27 +2308,27 @@ function momentumBadge(c){
   if(!cm||!cm.price) return '';
   var lp = lastP(c);
   if(lp<=0) return '';
-  var chf = _cmChf(cm);
-  if(!chf) return '';
-  var diff = (chf - lp) / lp * 100;
-  var chfAvg30 = cm.avg30 ? cm.avg30 * (cm.eurRate||1) : chf;
-  var velocity = chfAvg30 > 0 ? (chf - chfAvg30) / chfAvg30 * 100 : 0;
+  // Compare cm.price (EUR) vs lp (CHF) — EUR/CHF ≈ 1.0 so direction is reliable.
+  // Use avg30 for velocity if available (trend over 30 days).
+  var diff     = (cm.price - lp) / lp * 100;
+  var avg30    = cm.avg30 || cm.price;
+  var velocity = avg30 > 0 ? (cm.price - avg30) / avg30 * 100 : 0;
   var cls,icon,label,tip;
-  if(diff>18 && velocity>10){
+  if(diff > 20 && velocity > 8){
     cls='stayaway'; icon='🔥'; label='STAY AWAY';
-    tip='+'+diff.toFixed(1)+'% above logged · climbing fast — possibly overbought';
-  } else if(diff>15){
+    tip='+'+diff.toFixed(1)+'% above logged · momentum high — possibly overbought';
+  } else if(diff > 12){
     cls='rocket'; icon='🚀'; label='ROCKET';
     tip='+'+diff.toFixed(1)+'% above logged price';
-  } else if(diff>5){
+  } else if(diff > 5){
     cls='climbing'; icon='📈'; label='CLIMBING';
     tip='+'+diff.toFixed(1)+'% above logged price';
-  } else if(diff>=-5){
+  } else if(diff >= -5){
     cls='flat'; icon='➡'; label='FLAT';
     tip='Within '+Math.abs(diff).toFixed(1)+'% of logged price';
-  } else if(diff>=-15){
+  } else if(diff >= -20){
     cls='dip'; icon='📉'; label='PRICE DIP';
-    tip=diff.toFixed(1)+'% below logged — potential entry';
+    tip=diff.toFixed(1)+'% below logged — potential entry point';
   } else {
     cls='drop'; icon='⬇'; label='DROPPED';
     tip=diff.toFixed(1)+'% below logged — significant drop';
