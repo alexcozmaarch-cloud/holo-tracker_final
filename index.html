@@ -1049,6 +1049,14 @@ function clearCache(){ _cache = {}; }
 const PRICES_SHEET_KEY = 'holo_cm_prices_v1'; // localStorage key
 let _cmPrices = {}; // { cardId: {price,trend,avg7,avg30,low,week,tcgdexId} }
 
+// ── TCGdex SETS — declared here to avoid "before initialization" errors ───────
+var SETS_CACHE_KEY = 'holo_tcgdex_sets_v1';
+var SETS_CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
+let _setsData = []; // [{id, name, releaseDate, cardCount}]
+
+// ── Collection market price cache — declared early to avoid init errors ────────
+var _collMktCache = {}; // key = "name|||set|||variation"
+
 // Load CM prices from localStorage into cards[] on startup
 function loadCMPricesFromCache(){
   try{
@@ -1261,6 +1269,7 @@ let _cmFetchRunning = false;
 async function scheduleCMBgFetch(forceAll){
   if(_cmFetchRunning) return;
   if(!cards.length) return;
+  if(!scriptUrl){ console.log('[prices] skipped — no scriptUrl yet (connect Google Sheets first)'); return; }
 
   const now = Date.now();
   const toFetch = cards.filter(c=>{
@@ -1623,10 +1632,6 @@ async function saveCard(action, payload){
 // ── TCGdex SETS AUTOCOMPLETE ─────────────────────────────────────────────────
 // Fetched once on startup, cached in localStorage for 7 days.
 // Enables set name autocomplete on all Set fields.
-
-var SETS_CACHE_KEY = 'holo_tcgdex_sets_v1';
-var SETS_CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
-let _setsData = []; // [{id, name, releaseDate, cardCount}]
 
 function deriveSeries(id){
   if(!id) return '—';
@@ -2780,9 +2785,8 @@ function updateCollMarket(){
   else el.textContent='No price logged yet';
 }
 
-// ── Collection market price cache (independent of tracker) ──────────────────
-var _collMktCache = {}; // key = "name|||set|||variation"
-
+// ── Collection market price cache ─────────────────────────────────────────────
+// _collMktCache declared at top of script to avoid before-initialization errors
 async function fetchCollMarketPrice(name, set, variation, tcgdexId){
   const key = [name, set, variation||''].join('|||');
   if(_collMktCache[key] !== undefined) return _collMktCache[key];
