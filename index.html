@@ -31,6 +31,7 @@ header{padding:28px 0 24px;display:flex;align-items:flex-end;justify-content:spa
 .sync-dot.syncing{background:var(--gold);animation:blink 1s infinite;}
 .sync-dot.error{background:var(--red);}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 
 /* SETUP BANNER */
 .setup-banner{background:var(--card-bg);border:1px solid rgba(183,127,255,0.4);border-radius:2px;padding:24px;margin-bottom:24px;position:relative;overflow:hidden;}
@@ -538,6 +539,7 @@ hr.div{border:none;border-top:1px solid var(--border);margin:36px 0;}
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:6px;padding:0 2px;">
     <span id="price-status" style="font-family:DM Mono,monospace;font-size:10px;color:var(--text-dimmer);"></span>
     <button onclick="refreshPrices()" style="font-family:DM Mono,monospace;font-size:10px;padding:4px 12px;background:rgba(57,217,138,0.08);border:1px solid rgba(57,217,138,0.25);color:var(--green);border-radius:2px;cursor:pointer;white-space:nowrap;">↻ Refresh Prices</button>
+    <button onclick="openDiagnose()" style="font-family:DM Mono,monospace;font-size:10px;padding:4px 12px;background:rgba(77,159,255,0.08);border:1px solid rgba(77,159,255,0.3);color:var(--blue);border-radius:2px;cursor:pointer;white-space:nowrap;">🔬 Diagnose</button>
   </div>
 
   <!-- DESKTOP TABLE -->
@@ -1009,6 +1011,25 @@ hr.div{border:none;border-top:1px solid var(--border);margin:36px 0;}
     <div class="ai-box" id="m-ai"></div>
   </div>
 </div>
+
+<!-- ── DIAGNOSE MODAL ──────────────────────────────────────────────────────── -->
+<div id="diagnose-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:none;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:var(--card-bg);border:1px solid var(--border-bright);border-radius:4px;width:100%;max-width:640px;max-height:90vh;overflow-y:auto;padding:24px;position:relative;">
+    <button onclick="closeDiagnose()" style="position:absolute;top:12px;right:12px;background:none;border:none;color:var(--text-dim);font-size:18px;cursor:pointer;">✕</button>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;color:var(--blue);margin-bottom:4px;">🔬 PRICE ENGINE DIAGNOSE</div>
+    <div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text-dim);margin-bottom:20px;">Runs 4 live tests to find exactly why prices aren't showing</div>
+
+    <div id="diag-results" style="display:flex;flex-direction:column;gap:10px;">
+      <!-- Populated by JS -->
+    </div>
+
+    <div style="margin-top:20px;display:flex;gap:8px;flex-wrap:wrap;">
+      <button onclick="runDiagnose()" id="diag-run-btn" style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1px;padding:8px 24px;background:linear-gradient(135deg,var(--blue),var(--purple));border:none;border-radius:2px;color:#fff;cursor:pointer;">▶ RUN TESTS</button>
+      <button onclick="closeDiagnose()" style="font-family:DM Mono,monospace;font-size:11px;padding:8px 16px;background:none;border:1px solid var(--border);border-radius:2px;color:var(--text-dim);cursor:pointer;">Close</button>
+    </div>
+  </div>
+</div>
+
 
 <script>
 // ── CONSTANTS ────────────────────────────────────────────────────────────────
@@ -4800,6 +4821,229 @@ function timeAgo(d){
     return Math.floor(days/365)+'y ago';
   }catch{ return '—'; }
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DIAGNOSE ENGINE
+// ═══════════════════════════════════════════════════════════════════════════
+function openDiagnose(){
+  document.getElementById('diagnose-overlay').style.display='flex';
+  // Auto-run on open
+  runDiagnose();
+}
+function closeDiagnose(){
+  document.getElementById('diagnose-overlay').style.display='none';
+}
+
+function _diagRow(id, label, status, detail, fix){
+  const statusColors = {
+    running: 'var(--gold)',
+    ok:      'var(--green)',
+    warn:    'var(--gold)',
+    fail:    'var(--red)',
+  };
+  const statusIcons = { running:'⟳', ok:'✅', warn:'⚠', fail:'❌' };
+  const col = statusColors[status] || 'var(--text-dim)';
+  const icon = statusIcons[status] || '?';
+  return `
+    <div id="diag-${id}" style="background:var(--surface);border:1px solid var(--border);border-radius:2px;padding:14px 16px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:${detail||fix?'8px':'0'};">
+        <span style="font-size:16px;${status==='running'?'animation:spin 1s linear infinite;display:inline-block;':''}">${icon}</span>
+        <span style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1px;color:${col};">${label}</span>
+      </div>
+      ${detail ? `<div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text-dim);line-height:1.7;white-space:pre-wrap;">${detail}</div>` : ''}
+      ${fix    ? `<div style="margin-top:8px;font-family:DM Mono,monospace;font-size:10px;color:var(--gold);background:rgba(245,200,66,0.06);border:1px solid rgba(245,200,66,0.2);border-radius:2px;padding:8px 10px;">💡 ${fix}</div>` : ''}
+    </div>`;
+}
+
+function _updateDiagRow(id, status, detail, fix){
+  const el = document.getElementById('diag-'+id);
+  if(!el) return;
+  const statusColors = { running:'var(--gold)', ok:'var(--green)', warn:'var(--gold)', fail:'var(--red)' };
+  const statusIcons  = { running:'⟳', ok:'✅', warn:'⚠', fail:'❌' };
+  const col  = statusColors[status] || 'var(--text-dim)';
+  const icon = statusIcons[status]  || '?';
+  const label = el.querySelector('[style*="Bebas Neue"]').textContent;
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:${detail||fix?'8px':'0'};">
+      <span style="font-size:16px;">${icon}</span>
+      <span style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1px;color:${col};">${label}</span>
+    </div>
+    ${detail ? `<div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text-dim);line-height:1.7;white-space:pre-wrap;">${detail}</div>` : ''}
+    ${fix    ? `<div style="margin-top:8px;font-family:DM Mono,monospace;font-size:10px;color:var(--gold);background:rgba(245,200,66,0.06);border:1px solid rgba(245,200,66,0.2);border-radius:2px;padding:8px 10px;">💡 ${fix}</div>` : ''}`;
+}
+
+async function runDiagnose(){
+  const btn = document.getElementById('diag-run-btn');
+  if(btn){ btn.disabled=true; btn.textContent='Running…'; }
+
+  const container = document.getElementById('diag-results');
+  container.innerHTML = [
+    _diagRow('t1', 'TEST 1 — Apps Script Connected',    'running', 'Checking…'),
+    _diagRow('t2', 'TEST 2 — Apps Script TCGdex Proxy', 'running', 'Waiting…'),
+    _diagRow('t3', 'TEST 3 — TCGdex Direct (CORS)',     'running', 'Waiting…'),
+    _diagRow('t4', 'TEST 4 — Price Parse + Cache',      'running', 'Waiting…'),
+  ].join('');
+
+  // ── TEST 1: Is Apps Script URL set and responding? ─────────────────────────
+  const url = scriptUrl;
+  if(!url){
+    _updateDiagRow('t1','fail',
+      'No Apps Script URL stored. The tracker has no backend to proxy through.',
+      'Open the Setup tab → paste your /exec URL → click Connect.');
+    _updateDiagRow('t2','warn','Skipped — no URL to test.','Fix Test 1 first.');
+    // Still run T3 and T4
+  } else {
+    try{
+      const T = ms => new Promise((_,r)=>setTimeout(()=>r(new Error('timeout after '+ms+'ms')),ms));
+      const r = await Promise.race([
+        fetch(url,{method:'POST',body:JSON.stringify({action:'ping'})}),
+        T(10000)
+      ]);
+      const text = await r.text();
+      let data;
+      try{ data = JSON.parse(text); }catch{ data = null; }
+
+      if(data && (data.pong || data.error === 'Unknown action')){
+        // Script responded — even "Unknown action" means it's alive
+        _updateDiagRow('t1','ok',
+          `Script URL: ${url.slice(0,60)}…
+HTTP status: ${r.status}
+Response: ${text.slice(0,80)}`);
+      } else if(data?.error && data.error !== 'Unknown action'){
+        _updateDiagRow('t1','warn',
+          `Script responded but returned error: "${data.error}"
+HTTP: ${r.status}`,
+          'The script is reachable but may be an old version. Try redeploying as a NEW deployment (not update existing).');
+      } else {
+        _updateDiagRow('t1','ok',
+          `Script URL reachable. HTTP ${r.status}. Response: ${text.slice(0,100)}`);
+      }
+    }catch(err){
+      _updateDiagRow('t1','fail',
+        `Failed to reach Apps Script: ${err.message}
+URL: ${url.slice(0,80)}`,
+        'The URL may be wrong or expired. Go to Google Apps Script → Deploy → Copy the /exec URL again and reconnect.');
+    }
+
+    // ── TEST 2: Does the proxy handle action:'tcgdex'? ──────────────────────
+    const testCardUrl = 'https://api.tcgdex.net/v2/en/cards/mep-032';
+    try{
+      const T = ms => new Promise((_,r)=>setTimeout(()=>r(new Error('timeout after '+ms+'ms')),ms));
+      const r = await Promise.race([
+        fetch(url,{method:'POST',body:JSON.stringify({action:'tcgdex',url:testCardUrl})}),
+        T(14000)
+      ]);
+      const text = await r.text();
+      let data;
+      try{ data = JSON.parse(text); }catch{
+        _updateDiagRow('t2','fail',
+          `Script returned non-JSON: ${text.slice(0,120)}`,
+          'Your Apps Script may be erroring. Open Apps Script → View → Logs to see the error.');
+        data = null;
+      }
+      if(data){
+        if(data.error){
+          _updateDiagRow('t2','fail',
+            `Script returned error: "${data.error}"
+
+This means your deployed Apps Script does NOT have the tcgdex proxy handler.`,
+            'REQUIRED FIX: Open Apps Script → paste the full code from the Setup tab → Deploy → NEW deployment → copy new URL → reconnect.');
+        } else if(data.data?.id){
+          const cm = data.data?.pricing?.cardmarket;
+          const price = cm?.avg || cm?.['avg-holo'] || null;
+          _updateDiagRow('t2','ok',
+            `Proxy works! Fetched card: ${data.data.id}
+Cardmarket price in response: ${price ? '€'+price.toFixed(2) : 'NO PRICE DATA (card may not be on CM)'}
+Pricing keys: ${JSON.stringify(Object.keys(cm||{})).slice(0,80)}`);
+        } else {
+          _updateDiagRow('t2','warn',
+            `Proxy responded but data looks unexpected: ${JSON.stringify(data).slice(0,150)}`,
+            'Check Apps Script logs for errors.');
+        }
+      }
+    }catch(err){
+      _updateDiagRow('t2','fail',
+        `Proxy request failed: ${err.message}`,
+        'Script may have timed out. Check Apps Script → Executions for errors.');
+    }
+  }
+
+  // ── TEST 3: Direct TCGdex fetch (browser CORS) ─────────────────────────────
+  const testUrl = 'https://api.tcgdex.net/v2/en/cards/mep-032';
+  try{
+    const T = ms => new Promise((_,r)=>setTimeout(()=>r(new Error('timeout after '+ms+'ms')),ms));
+    const r = await Promise.race([fetch(testUrl), T(8000)]);
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const data = await r.json();
+    const cm = data?.pricing?.cardmarket;
+    const price = cm?.avg || cm?.['avg-holo'] || null;
+    _updateDiagRow('t3','ok',
+      `Direct TCGdex fetch works (CORS allowed).
+Card: ${data.id} | CM price: ${price?'€'+price.toFixed(2):'not available'}
+Pricing keys: ${JSON.stringify(Object.keys(cm||{}))}`);
+  }catch(err){
+    _updateDiagRow('t3','fail',
+      `Direct TCGdex fetch blocked: ${err.message}
+
+This is expected — TCGdex blocks direct browser requests on some endpoints.
+The proxy (Test 2) is required for prices to work.`,
+      url
+        ? 'Make sure Test 2 passes — the proxy is your only path to TCGdex data.'
+        : 'Connect your Apps Script URL (Test 1) — it handles TCGdex fetching server-side.');
+  }
+
+  // ── TEST 4: Cache + price parse check ─────────────────────────────────────
+  try{
+    const cacheKey  = typeof PRICES_SHEET_KEY !== 'undefined' ? PRICES_SHEET_KEY : 'holo_cm_prices_v2';
+    const raw = localStorage.getItem(cacheKey);
+    const cache = raw ? JSON.parse(raw) : {};
+    const total     = Object.keys(cache).length;
+    const withPrice = Object.values(cache).filter(v=>v&&v.price>0).length;
+    const noPrice   = Object.values(cache).filter(v=>v&&(!v.price||v.price<=0)).length;
+    const staleMs   = 7*24*60*60*1000;
+    const stale     = Object.values(cache).filter(v=>v&&v.fetchedAt&&(Date.now()-v.fetchedAt)>staleMs).length;
+    const neverFetched = cards.filter(c=>!cache[c.id]).length;
+
+    let status = 'ok';
+    let detail = `Cache key: "${cacheKey}"
+Total cached: ${total} cards
+With price: ${withPrice} ✅
+No price found: ${noPrice} ⚠
+Stale (>7 days): ${stale}
+Never fetched: ${neverFetched}`;
+    let fix = '';
+
+    if(withPrice === 0 && total > 0){
+      status = 'fail';
+      fix = 'Cache has entries but ALL have price:null — TCGdex fetches ran but returned no pricing data. This confirms Test 2 is the blocker. Fix the proxy first.';
+    } else if(withPrice === 0 && total === 0){
+      status = 'warn';
+      detail += '\n\nNo cache at all — fetches have never run or cache was cleared.';
+      fix = 'Prices have never been fetched. Connect your Apps Script and click ↻ Refresh Prices.';
+    } else if(withPrice > 0){
+      detail += '\n\nSample card with price: ';
+      const sample = Object.entries(cache).find(([,v])=>v&&v.price>0);
+      if(sample) detail += `${sample[0]} → €${sample[1].price.toFixed(2)}`;
+    }
+
+    // Check if cmLive is set on rendered cards
+    const withLive = cards.filter(c=>c.cmLive?.price>0).length;
+    detail += `
+
+Cards with cmLive set right now: ${withLive}/${cards.length}`;
+    if(withLive < withPrice){
+      status = status==='ok'?'warn':status;
+      fix = (fix?fix+' | ':'') + 'Some cached prices exist but cmLive is not set on cards — try clicking ↻ Refresh Prices to re-apply.';
+    }
+
+    _updateDiagRow('t4', status, detail, fix||'');
+  }catch(err){
+    _updateDiagRow('t4','fail',`Cache check error: ${err.message}`);
+  }
+
+  if(btn){ btn.disabled=false; btn.textContent='▶ RUN TESTS AGAIN'; }
+}
+
 </script>
 </body>
 </html>
