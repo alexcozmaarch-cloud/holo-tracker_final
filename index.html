@@ -2310,7 +2310,11 @@ function momentumBadge(c){
   if(lp<=0) return '';
   // Compare cm.price (EUR) vs lp (CHF) — EUR/CHF ≈ 1.0 so direction is reliable.
   // Use avg30 for velocity if available (trend over 30 days).
-  var diff     = (cm.price - lp) / lp * 100;
+  // Use original EUR price for comparison if available — apples to apples
+  var lastEntry = (c.priceHistory||[]).slice(-1)[0];
+  var loggedEur = (lastEntry?.originalCurrency==='EUR' && lastEntry?.originalPrice>0)
+    ? lastEntry.originalPrice : lp;
+  var diff     = loggedEur > 0 ? (cm.price - loggedEur) / loggedEur * 100 : 0;
   var avg30    = cm.avg30 || cm.price;
   var velocity = avg30 > 0 ? (cm.price - avg30) / avg30 * 100 : 0;
   var cls,icon,label,tip;
@@ -2474,15 +2478,34 @@ function render(){
           + (localId ? `<span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text);margin-left:5px;">${esc(localId)}</span>` : '')
           + (setName ? `<div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text-dim);margin-top:3px;white-space:normal;">${esc(setName)}</div>` : '');
       })()}</td>
-      <td>
-        <span class="price-val">${fmtCHF(lp)}</span>
-        ${c.target?`<span style="font-family:DM Mono,monospace;font-size:9px;margin-left:6px;color:${lp<=c.target?'var(--green)':'var(--text-dimmer)'}">🎯${fmtCHF(c.target)}</span>`:''}
-      </td>
+      <td>${(()=>{
+        const lastEntry = (c.priceHistory||[]).slice(-1)[0];
+        const origCur = lastEntry?.originalCurrency || 'CHF';
+        const origAmt = lastEntry?.originalPrice;
+        const hasOrig = origAmt > 0 && origCur !== 'CHF';
+        // Primary: show in original currency (big)
+        // Secondary: show CHF equivalent (small, in brackets)
+        const primary = hasOrig
+          ? `<span class="price-val">€${parseFloat(origAmt).toFixed(2)}</span>`
+          : `<span class="price-val">${fmtCHF(lp)}</span>`;
+        const secondary = hasOrig && lp > 0
+          ? `<div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text-dim);margin-top:1px;">(${fmtCHF(lp)})</div>`
+          : '';
+        const target = c.target
+          ? `<div style="font-family:DM Mono,monospace;font-size:9px;margin-top:2px;color:${lp<=c.target?'var(--green)':'var(--text-dimmer)'}">🎯€${c.target.toFixed(2)}</div>`
+          : '';
+        return primary + secondary + target;
+      })()}</td>
       <td>${(()=>{
         const cm=c.cmLive;
         if(!cm?.price) return `<span style="color:var(--text-dimmer);font-size:10px">\u2014</span>`;
-        const lp=lastP(c);
-        const diff=lp>0?((cm.price-lp)/lp*100):0;
+        // Compare in EUR: convert logged price to EUR using stored rate if available
+        const lastEntry = (c.priceHistory||[]).slice(-1)[0];
+        const origCur = lastEntry?.originalCurrency || 'CHF';
+        const origAmt = lastEntry?.originalPrice;
+        // loggedEur: what user paid in EUR (if they logged in EUR), else CHF (close enough for diff)
+        const loggedEur = (origCur==='EUR' && origAmt>0) ? origAmt : lastP(c);
+        const diff = loggedEur>0 ? ((cm.price - loggedEur)/loggedEur*100) : 0;
         const absDiff=Math.abs(diff);
         const priceCol=diff>5?'var(--green)':diff<-5?'var(--red)':'var(--text)';
         const pctCol=diff>5?'var(--green)':diff<-5?'var(--red)':'var(--text-dim)';
