@@ -3859,25 +3859,43 @@ async function syncData() {
     openModal('sheetsModal');
     return;
   }
-  showToast('Syncing…', 'info', 1500);
+  showToast('Syncing…', 'info', 2000);
+  let res, rawText, data;
   try {
-    const res = await fetch(state.sheetsUrl, {
+    res = await fetch(state.sheetsUrl, {
       method: 'POST',
       body: JSON.stringify({ action: 'getAll' }),
     });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
-    if (data.cards) state.cards = data.cards.map(sanitizeCard);
-    if (data.sealed) state.sealed = data.sealed;
-    if (data.collection) state.collection = data.collection;
-    renderTracker();
-    renderSealed();
-    renderCollection();
-    updateTopbarKpis();
-    showToast('Synced successfully', 'success');
   } catch (e) {
-    showToast('Sync failed: ' + e.message, 'error');
+    showToast('Network error — could not reach script. Check CORS / deployment.', 'error', 6000);
+    console.error('syncData fetch error:', e);
+    return;
   }
+  try {
+    rawText = await res.text();
+    data = JSON.parse(rawText);
+  } catch (e) {
+    showToast('Script returned invalid JSON. Did you deploy the new Apps Script v2?', 'error', 8000);
+    console.error('syncData parse error. Raw response:', rawText);
+    return;
+  }
+  if (data.error) {
+    showToast('Script error: ' + data.error, 'error', 8000);
+    console.error('Apps Script error:', data.error);
+    return;
+  }
+  // Load data with per-item safety
+  if (Array.isArray(data.cards)) {
+    state.cards = data.cards.map(c => { try { return sanitizeCard(c); } catch(e) { console.warn('Bad card skipped:', c, e); return null; } }).filter(Boolean);
+  }
+  if (Array.isArray(data.sealed))     state.sealed     = data.sealed;
+  if (Array.isArray(data.collection)) state.collection = data.collection;
+  try { renderTracker(); }    catch(e) { console.error('renderTracker failed:', e); }
+  try { renderSealed(); }     catch(e) { console.error('renderSealed failed:', e); }
+  try { renderCollection(); } catch(e) { console.error('renderCollection failed:', e); }
+  try { updateTopbarKpis(); } catch(e) { console.error('updateTopbarKpis failed:', e); }
+  const count = (data.cards || []).length;
+  showToast(`Synced — ${count} card${count !== 1 ? 's' : ''} loaded`, 'success');
 }
 
 async function syncToSheets() {
