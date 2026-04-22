@@ -1025,6 +1025,7 @@ hr.div{border:none;border-top:1px solid var(--border);margin:36px 0;}
 
     <div style="margin-top:20px;display:flex;gap:8px;flex-wrap:wrap;">
       <button onclick="runDiagnose()" id="diag-run-btn" style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1px;padding:8px 24px;background:linear-gradient(135deg,var(--blue),var(--purple));border:none;border-radius:2px;color:#fff;cursor:pointer;">▶ RUN TESTS</button>
+      <button onclick="diagClearAndRefetch()" style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1px;padding:8px 24px;background:rgba(57,217,138,0.12);border:1px solid rgba(57,217,138,0.4);border-radius:2px;color:var(--green);cursor:pointer;">🗑 CLEAR CACHE + REFETCH</button>
       <button onclick="closeDiagnose()" style="font-family:DM Mono,monospace;font-size:11px;padding:8px 16px;background:none;border:1px solid var(--border);border-radius:2px;color:var(--text-dim);cursor:pointer;">Close</button>
     </div>
   </div>
@@ -4228,6 +4229,16 @@ function doGet(e) {
   return respond({ status: 'ok', message: 'Holo Tracker script is running' });
 }
 
+// Run this function ONCE manually in the script editor to grant UrlFetchApp permission
+function authorizeUrlFetch() {
+  try {
+    UrlFetchApp.fetch('https://api.tcgdex.net/v2/en/cards/sv01-1', {muteHttpExceptions:true});
+    Logger.log('UrlFetchApp authorized successfully!');
+  } catch(e) {
+    Logger.log('Error: ' + e.message);
+  }
+}
+
 function doPost(e) {
   try {
     const payload = JSON.parse(e.postData.contents);
@@ -4833,6 +4844,15 @@ function openDiagnose(){
 function closeDiagnose(){
   document.getElementById('diagnose-overlay').style.display='none';
 }
+function diagClearAndRefetch(){
+  const cacheKey = typeof PRICES_SHEET_KEY !== 'undefined' ? PRICES_SHEET_KEY : 'holo_cm_prices_v2';
+  localStorage.removeItem(cacheKey);
+  _cmPrices = {};
+  cards.forEach(c=>{ c.cmLive = null; });
+  closeDiagnose();
+  toast('Cache cleared — fetching fresh prices now…', 'info', 4000);
+  scheduleCMBgFetch(true);
+}
 
 function _diagRow(id, label, status, detail, fix){
   const statusColors = {
@@ -4943,11 +4963,24 @@ URL: ${url.slice(0,80)}`,
       }
       if(data){
         if(data.error){
-          _updateDiagRow('t2','fail',
-            `Script returned error: "${data.error}"
-
-This means your deployed Apps Script does NOT have the tcgdex proxy handler.`,
-            'REQUIRED FIX: Open Apps Script → paste the full code from the Setup tab → Deploy → NEW deployment → copy new URL → reconnect.');
+          const is404     = data.error.includes('404');
+          const isAuth    = data.error.includes('UrlFetchApp') || data.error.includes('authorization') || data.error.includes('permission') || data.error.includes('Berechtigung');
+          const isNoHandler = data.error.includes('Unknown action');
+          if(is404){
+            _updateDiagRow('t2','warn',
+              `Proxy reached TCGdex but got HTTP 404 for the test card.\nThe PROXY IS WORKING — TCGdex just doesn't have this card.\nYour actual cards should still fetch prices fine.\nClick "Clear Cache + Refetch" to start fresh.`,
+              'Click the green button below → CLEAR CACHE + REFETCH to wipe stale data and fetch prices now.');
+          } else if(isAuth){
+            _updateDiagRow('t2','fail',
+              `UrlFetchApp not authorized: "${data.error.slice(0,150)}"`,
+              'Run the authorizeUrlFetch() function manually in Apps Script editor — select it in the dropdown → ▶ Run → Authorize when Google asks.');
+          } else if(isNoHandler){
+            _updateDiagRow('t2','fail',
+              `Old script version — tcgdex action not found.`,
+              'Paste the full code from Setup tab into Apps Script → Deploy → New deployment → copy URL → reconnect.');
+          } else {
+            _updateDiagRow('t2','fail', `Script error: "${data.error.slice(0,200)}"`, 'Check Apps Script → Executions for details.');
+          }
         } else if(data.data?.id){
           const cm = data.data?.pricing?.cardmarket;
           const price = cm?.avg || cm?.['avg-holo'] || null;
