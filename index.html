@@ -997,6 +997,13 @@ hr.div{border:none;border-top:1px solid var(--border);margin:36px 0;}
       <button onclick="saveTarget()" style="background:var(--green);border:none;border-radius:2px;padding:6px 12px;color:#000;font-family:DM Mono,monospace;font-size:10px;cursor:pointer;white-space:nowrap;">SAVE</button>
     </div>
 
+    <!-- Market price history chart -->
+    <div id="m-market-chart-sec" style="display:none;">
+      <div class="modal-sec" style="margin-top:18px;">📊 Market Price History <span style="font-family:DM Mono,monospace;font-size:9px;color:var(--text-dimmer);font-weight:400;">— weekly Cardmarket prices</span></div>
+      <div class="modal-chart-wrap" style="margin-bottom:4px;"><canvas id="chart-market" height="110"></canvas></div>
+      <div id="m-market-entries" style="margin-bottom:12px;"></div>
+    </div>
+
     <!-- My price log -->
     <div class="modal-sec" style="margin-top:18px;">📈 My Price Log <span style="font-family:DM Mono,monospace;font-size:9px;color:var(--text-dimmer);font-weight:400;">— prices you have manually logged</span></div>
     <div class="modal-chart-wrap" style="margin-bottom:10px;"><canvas id="chart-price" height="110"></canvas></div>
@@ -1516,6 +1523,8 @@ function applyCMPrices(priceRows){
       // Local cache is newer and has a price — keep it
       return;
     }
+    let mktHist = [];
+    try{ mktHist = JSON.parse(r[9]||'[]'); }catch{}
     _cmPrices[cardId] = {
       tcgdexId:  r[1]||null,
       week:      r[2]||'',
@@ -1525,7 +1534,7 @@ function applyCMPrices(priceRows){
       avg30:     parseFloat(r[6])||null,
       low:       parseFloat(r[7])||null,
       fetchedAt: sheetFetchedAt,
-      eurRate:   parseFloat(r[9])||null
+      marketHistory: mktHist,
     };
   });
   // Apply to cards — only when price is valid
@@ -2640,6 +2649,60 @@ function renderCharts(rows){
   });
 }
 
+function renderMarketChart(c){
+  const sec   = document.getElementById('m-market-chart-sec');
+  const mh    = _cmPrices[c.id]?.marketHistory || c.cmLive?.marketHistory || [];
+  if(!sec) return;
+  if(mh.length < 1){ sec.style.display='none'; return; }
+  sec.style.display='block';
+
+  // Entries list
+  const entriesEl = document.getElementById('m-market-entries');
+  if(entriesEl){
+    entriesEl.innerHTML = mh.slice().reverse().map(e=>
+      `<span style="display:inline-flex;align-items:center;gap:8px;margin-right:14px;margin-bottom:4px;">
+        <span style="color:var(--text-dimmer);font-size:9px;">${e.week}</span>
+        <span style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:var(--blue);">€${parseFloat(e.price).toFixed(2)}</span>
+      </span>`
+    ).join('');
+  }
+
+  if(mh.length < 2){ return; } // need 2+ points for a chart
+
+  // Replace canvas to avoid Chart.js reuse issues
+  const wrap = document.querySelector('#m-market-chart-sec .modal-chart-wrap');
+  wrap.style.display = 'block';
+  const old = document.getElementById('chart-market');
+  const cnv = document.createElement('canvas');
+  cnv.id='chart-market'; cnv.height=110;
+  old.parentNode.replaceChild(cnv, old);
+
+  const labels = mh.map(e=>e.week.replace(/\d+-/,'W'));
+  const prices = mh.map(e=>parseFloat(e.price));
+  const first  = prices[0], last = prices[prices.length-1];
+  const color  = last > first ? '#39d98a' : last < first ? '#ff4d6d' : '#4d9fff';
+
+  new Chart(cnv.getContext('2d'),{
+    type:'line',
+    data:{ labels, datasets:[{
+      data: prices,
+      borderColor: color,
+      backgroundColor: color+'22',
+      fill: true, tension: 0.3,
+      pointRadius: 4, pointBackgroundColor: color,
+      borderWidth: 2
+    }]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}, tooltip:{callbacks:{label:ctx=>'€'+ctx.raw.toFixed(2)}}},
+      scales:{
+        x:{ticks:{color:'#7a7a9a',font:{family:'DM Mono',size:9}}, grid:{color:'rgba(255,255,255,0.04)'}},
+        y:{ticks:{color:'#7a7a9a',font:{family:'DM Mono',size:9},callback:v=>'€'+v.toFixed(2)}, grid:{color:'rgba(255,255,255,0.04)'}}
+      }
+    }
+  });
+}
+
 function renderPriceChart(c){
   const ph = c.priceHistory;
   const wrap = document.querySelector('.modal-chart-wrap');
@@ -3481,7 +3544,7 @@ async function openModal(id){
   // Show cached weekly CM price immediately (instant, no network)
   _renderWeeklyCMInModal(c);
   // Render price chart after modal is fully visible
-  setTimeout(()=>renderPriceChart(c), 150);
+  setTimeout(()=>{ renderPriceChart(c); renderMarketChart(c); }, 150);
   // Then fetch fresh live price from TCGdex (upgrades display if successful)
   fetchCMPrice(c).catch(()=>{});
 
@@ -4312,7 +4375,7 @@ function doPost(e) {
     if (!cl) { cl = ss.insertSheet(COLL_SHEET); cl.appendRow(['id','cardName','set','game','condition','rawCondition','variation','tcgdexId','purchasePrice','purchaseCurrency','purchaseDate','notes','addedAt']); }
 
     let pr = ss.getSheetByName(PRICES_SHEET);
-    if (!pr) { pr = ss.insertSheet(PRICES_SHEET); pr.appendRow(['cardId','tcgdexId','week','price','trend','avg7','avg30','low','fetchedAt']); }
+    if (!pr) { pr = ss.insertSheet(PRICES_SHEET); pr.appendRow(['cardId','tcgdexId','week','price','trend','avg7','avg30','low','fetchedAt','marketHistory']); }
 
     if (payload.action === 'getAll') {
       return respond({ cards: getAllCards(cs), sealed: getAllSealed(sl), collection: getAllCollection(cl), cmPrices: getAllCMPrices(pr) });
@@ -4430,7 +4493,7 @@ function upsertCollection(sheet, item) {
 function getAllCMPrices(sheet) {
   const rows = sheet.getDataRange().getValues();
   if (rows.length <= 1) return [];
-  return rows.slice(1).map(r => [r[0],r[1],r[2],r[3],r[4],r[5],r[6],r[7],r[8]]);
+  return rows.slice(1).map(r => [r[0],r[1],r[2],r[3],r[4],r[5],r[6],r[7],r[8],r[9]||'[]']);
 }
 
 function saveCMPrices(sheet, rows) {
