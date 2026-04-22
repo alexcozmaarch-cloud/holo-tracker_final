@@ -1182,37 +1182,37 @@ function parseSetField(raw){
 // ── Parse Cardmarket pricing from TCGdex card detail ────────────────
 // TCGdex format: detail.pricing.cardmarket.avg / avg-holo / trend / avg7 / avg30 / low
 function _parseCMPricing(detail, variation){
-  // Path 1: detail.pricing.cardmarket  (TCGdex v2 modern format)
-  const nc = detail?.pricing?.cardmarket;
-  if(nc && typeof nc === 'object'){
-    // Take any non-zero price value — avg-holo preferred, then avg, then trend
-    const price = nc['avg-holo']??nc.avg??nc.trendPrice??nc.trend??null;
+  // TCGdex v2 confirmed shape (from docs):
+  //   detail.pricing.cardmarket.avg       — non-holo average
+  //   detail.pricing.cardmarket.avg-holo  — holo average
+  //   detail.pricing.cardmarket.trend / trend-holo
+  //   detail.pricing.cardmarket.avg7 / avg7-holo
+  //   detail.pricing.cardmarket.avg30 / avg30-holo
+  //   detail.pricing.cardmarket.low / low-holo
+  // If card is not listed on Cardmarket, pricing.cardmarket is omitted entirely.
+  const cm = detail?.pricing?.cardmarket;
+  if(cm && typeof cm === 'object'){
+    // Prefer holo price if available, fall back to non-holo avg
+    const price = (cm['avg-holo'] > 0 ? cm['avg-holo'] : null) ?? cm.avg ?? cm.trend ?? null;
     if(price > 0) return {
       price,
-      trend: nc['trend-holo']??nc.trend??null,
-      avg7:  nc['avg7-holo'] ??nc.avg7 ??null,
-      avg30: nc['avg30-holo']??nc.avg30??null,
-      low:   nc['low-holo']  ??nc.low  ??null,
+      trend: cm['trend-holo'] ?? cm.trend ?? null,
+      avg7:  cm['avg7-holo']  ?? cm.avg7  ?? null,
+      avg30: cm['avg30-holo'] ?? cm.avg30 ?? null,
+      low:   cm['low-holo']   ?? cm.low   ?? null,
     };
   }
-  // Path 2: detail.cardmarket  (TCGdex legacy / some sets)
+  // Legacy fallback for older cached data shapes
   const lc = detail?.cardmarket;
   if(lc && typeof lc === 'object'){
     const p = lc.prices ?? lc;
-    const price = p.averageSellPrice ?? p.avg1 ?? p.avg ?? p.trendPrice ?? null;
+    const price = p.averageSellPrice ?? p.avg ?? null;
     if(price > 0) return {
-      price,
-      trend: p.trendPrice??p.trend??null,
-      avg7:  p.avg7??null, avg30:p.avg30??null,
-      low:   p.lowPrice??p.low??null,
+      price, trend: p.trendPrice ?? p.trend ?? null,
+      avg7: p.avg7 ?? null, avg30: p.avg30 ?? null, low: p.lowPrice ?? p.low ?? null,
     };
   }
-  // Path 3: flat avg on detail root (some older TCGdex responses)
-  if(detail?.avg > 0) return {
-    price: detail.avg, trend: detail.trend??null,
-    avg7: detail.avg7??null, avg30: detail.avg30??null, low: detail.low??null,
-  };
-  return {price:null,trend:null,avg7:null,avg30:null,low:null};
+  return {price:null, trend:null, avg7:null, avg30:null, low:null};
 }
 
 // ── Fetch one card from TCGdex, return {detail, cm} ─────────────────
@@ -1220,46 +1220,73 @@ function _parseCMPricing(detail, variation){
 // B: by saved tcgdexId                — second try
 // C: name search                      — last resort
 async function fetchCardFromTCGdex(name, setField, variation, tcgdexId){
-  // A: direct endpoint
+  // TCGdex API note:
+  //   /sets/{setId}/{localId}  → returns Card Brief (id + metadata, NO pricing)
+  //   /cards/{id}              → returns full Card object WITH pricing.cardmarket
+  // So every path must end with a /cards/{id} fetch to get pricing data.
+
   const {setId, localId} = parseSetField(setField);
+
+  // ── A: set+number → resolve brief → fetch full card with pricing ──
   if(setId && localId){
     try{
-      const d = await tcgdexFetch(`https://api.tcgdex.net/v2/en/sets/${encodeURIComponent(setId)}/${encodeURIComponent(localId)}`);
-      if(d?.id) return {detail:d, cm:_parseCMPricing(d,variation)};
-    }catch(e){ console.log('[A]',name,setField,'→',e.message); }
+      const brief = await tcgdexFetch(`https://api.tcgdex.net/v2/en/sets/${encodeURIComponent(setId)}/${encodeURIComponent(localId)}`);
+      if(brief?.id){
+        const full = await tcgdexFetch(`https://api.tcgdex.net/v2/en/cards/${encodeURIComponent(brief.id)}`);
+        if(full?.id){
+          const cm = _parseCMPricing(full, variation);
+          console.log('[A ok]', name, '→', full.id, '| cm.price:', cm.price);
+          return {detail:full, cm};
+        }
+      }
+    }catch(e){ console.log('[A fail]', name, setField, '→', e.message); }
   }
-  // B: by tcgdexId
+
+  // ── B: saved tcgdexId → fetch full card directly ──────────────────
   if(tcgdexId){
     try{
-      const d = await tcgdexFetch(`https://api.tcgdex.net/v2/en/cards/${tcgdexId}`);
-      if(d?.id) return {detail:d, cm:_parseCMPricing(d,variation)};
-    }catch(e){ console.log('[B]',name,'→',e.message); }
+      const full = await tcgdexFetch(`https://api.tcgdex.net/v2/en/cards/${encodeURIComponent(tcgdexId)}`);
+      if(full?.id){
+        const cm = _parseCMPricing(full, variation);
+        console.log('[B ok]', name, '→', full.id, '| cm.price:', cm.price);
+        return {detail:full, cm};
+      }
+    }catch(e){ console.log('[B fail]', name, '→', e.message); }
   }
-  // C: name search
+
+  // ── C: name search → pick best match → fetch full card ───────────
   if(name){
     try{
       const nq = `name=eq:${encodeURIComponent(name)}`;
       const lq = localId ? `&localId=eq:${encodeURIComponent(localId)}` : '';
       const list = await tcgdexFetch(`https://api.tcgdex.net/v2/en/cards?${nq}${lq}&pagination[itemsPerPage]=10`);
-      if(!Array.isArray(list)||!list.length) throw new Error('not found');
+      if(!Array.isArray(list) || !list.length) throw new Error('not found');
+      // Pick best match by variation/rarity if multiple results
       let match = list[0];
-      if(variation && list.length>1){
-        const v=variation.toLowerCase();
+      if(variation && list.length > 1){
+        const v = variation.toLowerCase();
         const found = list.find(x=>{
-          const r=String(x.rarity||'').toLowerCase();
-          if(v==='holo')      return r.includes('holo')&&!r.includes('reverse');
-          if(v==='reverse')   return r.includes('reverse');
-          if(v==='full-art')  return r.includes('full')||r.includes('illustration');
-          if(v==='alt-art')   return r.includes('special illustration')||r.includes('alt');
-          if(v==='normal')    return !r.includes('holo')&&!r.includes('reverse');
+          const r = String(x.rarity||'').toLowerCase();
+          if(v==='holo')     return r.includes('holo') && !r.includes('reverse');
+          if(v==='reverse')  return r.includes('reverse');
+          if(v==='full-art') return r.includes('full') || r.includes('illustration');
+          if(v==='alt-art')  return r.includes('special illustration') || r.includes('alt');
+          if(v==='normal')   return !r.includes('holo') && !r.includes('reverse');
           return false;
         });
-        if(found) match=found;
+        if(found) match = found;
       }
-      const d = await tcgdexFetch(`https://api.tcgdex.net/v2/en/cards/${match.id}`);
-      if(d?.id) return {detail:d, cm:_parseCMPricing(d,variation)};
-    }catch(e){ console.log('[C]',name,'→',e.message); }
+      // match.id is the card ID — fetch full card for pricing
+      const full = await tcgdexFetch(`https://api.tcgdex.net/v2/en/cards/${encodeURIComponent(match.id)}`);
+      if(full?.id){
+        const cm = _parseCMPricing(full, variation);
+        console.log('[C ok]', name, '→', full.id, '| cm.price:', cm.price);
+        return {detail:full, cm};
+      }
+    }catch(e){ console.log('[C fail]', name, '→', e.message); }
   }
+
+  console.log('[not found]', name, setField);
   return null;
 }
 
