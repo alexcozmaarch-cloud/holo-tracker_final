@@ -647,6 +647,7 @@ select option { background: var(--surface-2); }
   color: var(--text-muted);
   cursor: pointer;
   outline: none;
+  min-width: 120px;
 }
 .filter-select:focus { border-color: var(--accent); }
 
@@ -1166,6 +1167,9 @@ tr:hover .row-actions { opacity: 1; }
 }
 .toast.hiding { animation: toastOut 0.18s ease forwards; }
 
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { animation: spin 0.8s linear infinite; transform-origin: center; display: block; }
+
 /* =========================================
    GAME BADGE
    ========================================= */
@@ -1462,6 +1466,23 @@ function respond(d){return ContentService.createTextOutput(JSON.stringify(d)).se
           <option value="Other">Other</option>
         </select>
       </div>
+      <div class="form-group">
+        <label>TCGdex Card ID <span style="color:var(--text-faint);font-weight:400;font-size:var(--text-xs)">(e.g. sv01-1)</span></label>
+        <input type="text" id="editCardTcgdexId" placeholder="e.g. sv01-1" />
+      </div>
+      <div class="form-group">
+        <label>Variation</label>
+        <select id="editCardVariation">
+          <option value="">Any / Unknown</option>
+          <option value="Normal">Normal</option>
+          <option value="Holo">Holo</option>
+          <option value="Reverse Holo">Reverse Holo</option>
+          <option value="Full Art">Full Art</option>
+          <option value="Alt Art">Alt Art</option>
+          <option value="Promo">Promo</option>
+          <option value="Special Illustration">Special Illustration</option>
+        </select>
+      </div>
       <div class="form-group span-2">
         <label>Notes</label>
         <input type="text" id="editCardNotes" placeholder="Source, reason…" />
@@ -1637,6 +1658,23 @@ function respond(d){return ContentService.createTextOutput(JSON.stringify(d)).se
               <input type="text" id="cardSet" placeholder="sv01, optional" />
             </div>
             <div class="form-group">
+              <label>TCGdex Card ID <span style="color:var(--text-faint);font-weight:400;font-size:var(--text-xs)">(Pokémon only, e.g. sv01-1)</span></label>
+              <input type="text" id="cardTcgdexId" placeholder="e.g. sv01-1, optional" />
+            </div>
+            <div class="form-group">
+              <label>Variation</label>
+              <select id="cardVariation">
+                <option value="">Any / Unknown</option>
+                <option value="Normal">Normal</option>
+                <option value="Holo">Holo</option>
+                <option value="Reverse Holo">Reverse Holo</option>
+                <option value="Full Art">Full Art</option>
+                <option value="Alt Art">Alt Art</option>
+                <option value="Promo">Promo</option>
+                <option value="Special Illustration">Special Illustration</option>
+              </select>
+            </div>
+            <div class="form-group">
               <label>Game</label>
               <select id="cardGame">
                 <option value="Pokémon">Pokémon</option>
@@ -1689,7 +1727,11 @@ function respond(d){return ContentService.createTextOutput(JSON.stringify(d)).se
             <span class="pill pill-strong" data-val="strong" onclick="setSignalFilter('strong',this)">⭐ Strong</span>
             <span class="pill pill-dip" data-val="dip" onclick="setSignalFilter('dip',this)">🛒 Dip</span>
           </div>
-          <div style="margin-left:auto;display:flex;gap:var(--space-2);flex-shrink:0">
+          <div style="margin-left:auto;display:flex;gap:var(--space-2);flex-shrink:0;align-items:center">
+            <button class="btn btn-secondary btn-sm" id="refreshPricesBtn" onclick="refreshAllPrices()" title="Fetch live prices from TCGdex for all Pokémon cards with a TCGdex ID">
+              <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+              Refresh Prices
+            </button>
             <select class="filter-select" id="trackerSort" onchange="renderTracker()">
               <option value="mentions">Most Mentioned</option>
               <option value="newest">Newest</option>
@@ -1719,8 +1761,8 @@ function respond(d){return ContentService.createTextOutput(JSON.stringify(d)).se
                   <th class="sortable">Card</th>
                   <th class="sortable">Game</th>
                   <th>Set ID</th>
-                  <th class="sortable">Price</th>
-                  <th>Trend</th>
+                  <th class="sortable">Live Price</th>
+                  <th>7d Trend</th>
                   <th class="sortable">Mentions</th>
                   <th>Last Seen</th>
                   <th>Signal</th>
@@ -2310,14 +2352,44 @@ function showToast(msg, type = 'info', duration = 3000) {
 // =========================================
 //   SIGNAL ENGINE
 // =========================================
-function computeSignal(mentions) {
-  if (mentions >= 10) return 'hot';
-  if (mentions >= 7)  return 'strong';
-  if (mentions >= 5)  return 'buy';
-  if (mentions >= 3)  return 'warm';
-  if (mentions >= 2)  return 'watch';
-  if (mentions >= 1)  return 'dip';
-  return 'none';
+// computeSignal accepts either a mention count (backwards compat) or a card object.
+// When given a card, it blends mention score with price momentum from TCGdex data.
+function computeSignal(cardOrMentions) {
+  let mentions, priceMomentum = 0;
+
+  if (typeof cardOrMentions === 'object' && cardOrMentions !== null) {
+    mentions = Number(cardOrMentions.mentions) || 0;
+    // Price momentum: compare avg7 vs avg30 (% change)
+    const avg7  = Number(cardOrMentions.priceAvg7)  || 0;
+    const avg30 = Number(cardOrMentions.priceAvg30) || 0;
+    if (avg7 > 0 && avg30 > 0) {
+      priceMomentum = ((avg7 - avg30) / avg30) * 100; // positive = rising, negative = falling
+    }
+  } else {
+    mentions = Number(cardOrMentions) || 0;
+  }
+
+  // Base signal from mention tiers
+  const tiers = [
+    { min: 10, sig: 'hot' },
+    { min: 7,  sig: 'strong' },
+    { min: 5,  sig: 'buy' },
+    { min: 3,  sig: 'warm' },
+    { min: 2,  sig: 'watch' },
+    { min: 1,  sig: 'dip' },
+  ];
+  const ORDER = ['none','dip','watch','warm','buy','strong','hot'];
+  let baseIdx = 0;
+  for (const t of tiers) {
+    if (mentions >= t.min) { baseIdx = ORDER.indexOf(t.sig); break; }
+  }
+
+  // Price momentum modifier: strong uptrend (+10%+) boosts one tier, downtrend (-10%+) dampens one tier
+  let adjusted = baseIdx;
+  if (priceMomentum >= 10)       adjusted = Math.min(ORDER.length - 1, baseIdx + 1);
+  else if (priceMomentum <= -10) adjusted = Math.max(0, baseIdx - 1);
+
+  return ORDER[adjusted];
 }
 
 const SIGNAL_LABELS = {
@@ -2373,7 +2445,7 @@ function fmtPrice(p, cur) {
 }
 
 function updateTopbarKpis() {
-  const hot = state.cards.filter(c => computeSignal(c.mentions) === 'hot').length
+  const hot = state.cards.filter(c => computeSignal(c) === 'hot').length
             + state.sealed.filter(s => computeSignal(s.mentions) === 'hot').length;
   const totalMentions = state.cards.reduce((a,c) => a + (Number(c.mentions)||0), 0);
   document.getElementById('kpiCards').textContent = state.cards.length;
@@ -2410,8 +2482,8 @@ function addCard() {
   const name = document.getElementById('cardName').value.trim();
   if (!name) { showToast('Card name is required', 'error'); return; }
 
-  const existIdx = state.cards.findIndex(c => c.name.toLowerCase() === name.toLowerCase()
-    && c.game === document.getElementById('cardGame').value);
+  const game = document.getElementById('cardGame').value;
+  const existIdx = state.cards.findIndex(c => c.name.toLowerCase() === name.toLowerCase() && c.game === game);
 
   if (existIdx >= 0) {
     state.cards[existIdx].mentions = (Number(state.cards[existIdx].mentions) || 0) + 1;
@@ -2422,23 +2494,42 @@ function addCard() {
       state.cards[existIdx].priceHistory = state.cards[existIdx].priceHistory || [];
       state.cards[existIdx].priceHistory.push({ date: Date.now(), price: Number(price), currency: cur });
     }
+    // Update tcgdexId / variation if provided
+    const tcgdexId = document.getElementById('cardTcgdexId').value.trim();
+    const variation = document.getElementById('cardVariation').value;
+    if (tcgdexId) state.cards[existIdx].tcgdexId = tcgdexId;
+    if (variation) state.cards[existIdx].variation = variation;
     showToast(`+1 mention for "${name}" — now ${state.cards[existIdx].mentions}`, 'success');
+    // Auto-fetch price if tcgdexId now set
+    const cardId = state.cards[existIdx].id;
+    if (state.cards[existIdx].tcgdexId) fetchCardPrice(cardId);
   } else {
     const price = document.getElementById('cardPrice').value;
     const cur = document.getElementById('cardCurrency').value;
+    const tcgdexId = document.getElementById('cardTcgdexId').value.trim();
+    const variation = document.getElementById('cardVariation').value;
     const card = {
       id: uid(),
       name,
       set: document.getElementById('cardSet').value.trim(),
-      game: document.getElementById('cardGame').value,
+      game,
       notes: document.getElementById('cardNotes').value.trim(),
       firstSeen: Date.now(),
       lastSeen: Date.now(),
       mentions: 1,
       priceHistory: price ? [{ date: Date.now(), price: Number(price), currency: cur }] : [],
+      tcgdexId: tcgdexId || null,
+      variation: variation || null,
+      livePrice: null,
+      livePriceCurrency: null,
+      livePriceFetchedAt: null,
+      priceAvg7: null,
+      priceAvg30: null,
     };
     state.cards.unshift(card);
     showToast(`Added "${name}"`, 'success');
+    // Auto-fetch price if tcgdexId provided
+    if (tcgdexId) fetchCardPrice(card.id);
   }
 
   // Clear form
@@ -2446,6 +2537,8 @@ function addCard() {
   document.getElementById('cardSet').value = '';
   document.getElementById('cardPrice').value = '';
   document.getElementById('cardNotes').value = '';
+  document.getElementById('cardTcgdexId').value = '';
+  document.getElementById('cardVariation').value = '';
 
   renderTracker();
   updateTopbarKpis();
@@ -2470,6 +2563,8 @@ function editCard(id) {
   document.getElementById('editCardSet').value = card.set || '';
   document.getElementById('editCardGame').value = card.game || 'Pokémon';
   document.getElementById('editCardNotes').value = card.notes || '';
+  document.getElementById('editCardTcgdexId').value = card.tcgdexId || '';
+  document.getElementById('editCardVariation').value = card.variation || '';
   openModal('editCardModal');
 }
 
@@ -2478,14 +2573,19 @@ function saveEditCard() {
   if (!id) return;
   const card = state.cards.find(c => c.id === id);
   if (!card) return;
+  const prevTcgdexId = card.tcgdexId;
   card.name = document.getElementById('editCardName').value.trim() || card.name;
   card.set = document.getElementById('editCardSet').value.trim();
   card.game = document.getElementById('editCardGame').value;
   card.notes = document.getElementById('editCardNotes').value.trim();
+  card.tcgdexId = document.getElementById('editCardTcgdexId').value.trim() || null;
+  card.variation = document.getElementById('editCardVariation').value || null;
   closeModal('editCardModal');
   renderTracker();
   syncToSheets();
   showToast('Card updated', 'success');
+  // If tcgdexId was just added or changed, auto-fetch price
+  if (card.tcgdexId && card.tcgdexId !== prevTcgdexId) fetchCardPrice(id);
 }
 
 function bumpMention(id) {
@@ -2512,7 +2612,7 @@ function renderTracker() {
     (c.set||'').toLowerCase().includes(search)
   );
   if (gameFilter !== 'all') cards = cards.filter(c => c.game === gameFilter);
-  if (trackerSignalFilter !== 'all') cards = cards.filter(c => computeSignal(c.mentions) === trackerSignalFilter);
+  if (trackerSignalFilter !== 'all') cards = cards.filter(c => computeSignal(c) === trackerSignalFilter);
 
   // Sort
   if (sort === 'mentions') cards.sort((a,b) => (Number(b.mentions)||0) - (Number(a.mentions)||0));
@@ -2539,29 +2639,53 @@ function renderTracker() {
   document.getElementById('trackerTotalMentions').textContent = `${totalM} total mention${totalM !== 1 ? 's' : ''}`;
 
   tbody.innerHTML = cards.map((c, i) => {
-    const sig = computeSignal(c.mentions);
-    const lp = lastPrice(c);
-    const cur = lastCurrency(c);
-    const trend = priceTrend(c);
-    const trendClass = trend > 0 ? 'up' : trend < 0 ? 'down' : 'flat';
-    const trendStr = trend === 0 ? '' : (trend > 0 ? `▲ ${trend.toFixed(1)}%` : `▼ ${Math.abs(trend).toFixed(1)}%`);
+    const sig = computeSignal(c);
+    // Live price display: prefer TCGdex live price, fallback to manual log
+    const hasLive = c.livePrice != null;
+    const displayPrice = hasLive ? c.livePrice : lastPrice(c);
+    const displayCur  = hasLive ? (c.livePriceCurrency || 'EUR') : lastCurrency(c);
+    // 7-day trend from TCGdex avg7/avg30
+    let trendVal = 0, trendClass = 'flat', trendStr = '';
+    if (c.priceAvg7 && c.priceAvg30) {
+      trendVal = ((c.priceAvg7 - c.priceAvg30) / c.priceAvg30) * 100;
+      trendClass = trendVal > 0 ? 'up' : trendVal < 0 ? 'down' : 'flat';
+      trendStr = trendVal === 0 ? '' : (trendVal > 0 ? `▲ ${trendVal.toFixed(1)}%` : `▼ ${Math.abs(trendVal).toFixed(1)}%`);
+    } else {
+      // fallback: use manual price history trend
+      const mt = priceTrend(c);
+      trendClass = mt > 0 ? 'up' : mt < 0 ? 'down' : 'flat';
+      trendStr = mt === 0 ? '' : (mt > 0 ? `▲ ${mt.toFixed(1)}%` : `▼ ${Math.abs(mt).toFixed(1)}%`);
+    }
+
+    // Price source indicator
+    const priceSourceTag = hasLive
+      ? `<span style="font-size:10px;color:var(--teal);font-family:var(--font-mono);line-height:1">${c.livePriceFetchedAt ? 'LIVE' : 'LIVE'}</span>`
+      : '';
+
+    // Fetch price button — only for Pokémon, shows spinner state
+    const canFetch = c.game === 'Pokémon';
+    const fetchBtn = canFetch
+      ? `<button class="btn-icon" id="fetchBtn-${c.id}" title="${c.tcgdexId ? 'Refresh live price from TCGdex' : 'Set TCGdex ID via Edit to enable live price'}" onclick="fetchCardPrice('${c.id}')" ${c.tcgdexId ? '' : 'style="opacity:0.35;cursor:default"'}>
+          <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        </button>`
+      : '';
 
     return `<tr class="fade-in" style="animation-delay:${i * 0.02}s">
       <td>
         <div class="card-cell">
           <span class="card-name">${escHtml(c.name)}</span>
-          ${c.notes ? `<span class="card-notes">${escHtml(c.notes)}</span>` : ''}
+          ${c.tcgdexId ? `<span class="card-notes" style="color:var(--teal)">${escHtml(c.tcgdexId)}${c.variation ? ' · ' + escHtml(c.variation) : ''}</span>` : (c.notes ? `<span class="card-notes">${escHtml(c.notes)}</span>` : '')}
         </div>
       </td>
       <td>${gameBadge(c.game)}</td>
       <td class="muted">${escHtml(c.set) || '—'}</td>
       <td>
         <div class="price-cell">
-          <div class="price-main">${lp ? fmtPrice(lp, cur) : '—'}</div>
-          ${trendStr ? `<div class="price-trend ${trendClass}">${trendStr}</div>` : ''}
+          <div class="price-main" style="display:flex;align-items:center;gap:4px">${displayPrice ? fmtPrice(displayPrice, displayCur) : '—'}${priceSourceTag}</div>
+          ${c.livePriceFetchedAt ? `<div style="font-size:10px;color:var(--text-faint);font-family:var(--font-mono)">${fmtDateShort(c.livePriceFetchedAt)}</div>` : ''}
         </div>
       </td>
-      <td>${sparklineHtml(c)}</td>
+      <td>${trendStr ? `<span class="price-trend ${trendClass}">${trendStr}</span>` : (sparklineHtml(c))}</td>
       <td>
         <div class="mention-count">
           <span class="mention-num">${c.mentions}</span>
@@ -2575,7 +2699,8 @@ function renderTracker() {
           <button class="btn-icon" title="Add mention" onclick="bumpMention('${c.id}')">
             <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" fill="none" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           </button>
-          <button class="btn-icon" title="Log price" onclick="openPriceModal('${c.id}')">
+          ${fetchBtn}
+          <button class="btn-icon" title="Log price manually" onclick="openPriceModal('${c.id}')">
             <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" fill="none" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
           </button>
           <button class="btn-icon" title="Edit" onclick="editCard('${c.id}')">
@@ -2712,6 +2837,182 @@ function logPrice(id) {
   openPriceModal(id); // re-render modal
   renderTracker();
   syncToSheets();
+}
+
+// =========================================
+//   TCGDEX LIVE PRICE FETCHING
+// =========================================
+
+// Variation key map: map user-friendly variation names to TCGdex pricing keys
+function getPriceForVariation(pricing, variation) {
+  const cm = pricing && pricing.cardmarket;
+  const tcp = pricing && pricing.tcgplayer;
+
+  // Determine which Cardmarket field to use based on variation
+  let cmPrice = null;
+  if (cm) {
+    const v = (variation || '').toLowerCase();
+    if (v.includes('reverse')) {
+      cmPrice = cm['avg30-reverse'] || cm['avg7-reverse'] || cm['avg1-reverse'] || cm.reverse || cm.avg30 || cm.avg7 || cm.avg1 || cm.avg || null;
+    } else if (v.includes('holo') || v.includes('full art') || v.includes('alt art') || v.includes('special')) {
+      cmPrice = cm['avg30-holo'] || cm['avg7-holo'] || cm['avg1-holo'] || cm['low-holo'] || cm.avg30 || cm.avg7 || cm.avg || null;
+    } else {
+      cmPrice = cm.avg30 || cm.avg7 || cm.avg1 || cm.avg || null;
+    }
+  }
+  // TCGPlayer market price (USD) as fallback
+  const tcpPrice = tcp && (tcp.marketPrice || tcp.midPrice || tcp.lowPrice) || null;
+
+  return { cmPrice, tcpPrice, cm, tcp };
+}
+
+async function fetchCardPrice(cardId) {
+  const card = state.cards.find(c => c.id === cardId);
+  if (!card) return;
+  if (!card.tcgdexId) {
+    showToast(`"${card.name}" has no TCGdex ID — edit the card to add one`, 'error');
+    return;
+  }
+
+  // Visual spinner on the row button
+  const btn = document.getElementById(`fetchBtn-${cardId}`);
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" fill="none" stroke-width="2" class="spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>';
+  }
+
+  try {
+    // Normalise ID: some sets use zero-padded numbers (sv03.5-006 not sv03.5-6)
+    // Try exact ID first, then retry with zero-padded card number
+    let rawId = card.tcgdexId.trim();
+    let res = await fetch(`https://api.tcgdex.net/v2/en/cards/${encodeURIComponent(rawId)}`);
+    if (!res.ok) {
+      // Attempt to zero-pad: split on last hyphen, pad number to 3 digits
+      const lastHyphen = rawId.lastIndexOf('-');
+      if (lastHyphen > 0) {
+        const setpart = rawId.slice(0, lastHyphen);
+        const numpart = rawId.slice(lastHyphen + 1).replace(/^\d+$/, n => n.padStart(3, '0'));
+        const paddedId = `${setpart}-${numpart}`;
+        if (paddedId !== rawId) {
+          res = await fetch(`https://api.tcgdex.net/v2/en/cards/${encodeURIComponent(paddedId)}`);
+          if (res.ok) rawId = paddedId; // update if found
+        }
+      }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    }
+    const data = await res.json();
+
+    const pricing = data.pricing || {};
+    const { cmPrice, tcpPrice, cm } = getPriceForVariation(pricing, card.variation);
+
+    // Prefer Cardmarket EUR price, fallback to TCGPlayer USD
+    let livePrice = null, livePriceCurrency = null;
+    if (cmPrice != null) {
+      livePrice = Number(cmPrice);
+      livePriceCurrency = 'EUR';
+    } else if (tcpPrice != null) {
+      livePrice = Number(tcpPrice);
+      livePriceCurrency = 'USD';
+    }
+
+    if (livePrice === null) {
+      showToast(`No price data available for "${card.name}" (${card.tcgdexId})`, 'info');
+    } else {
+      // Store live price + 7d/30d averages for signal computation
+      card.livePrice = livePrice;
+      card.livePriceCurrency = livePriceCurrency;
+      card.livePriceFetchedAt = Date.now();
+      card.priceAvg7  = cm ? (Number(cm.avg7)  || null) : null;
+      card.priceAvg30 = cm ? (Number(cm.avg30) || null) : null;
+
+      // Also push to manual priceHistory for sparkline continuity
+      card.priceHistory = card.priceHistory || [];
+      card.priceHistory.push({ date: Date.now(), price: livePrice, currency: livePriceCurrency, source: 'tcgdex' });
+
+      // Also store card image if available
+      if (data.image && !card.imageUrl) card.imageUrl = data.image + '/low.webp';
+
+      showToast(`✓ ${card.name}: ${livePriceCurrency} ${livePrice.toFixed(2)}${cm && cm.avg7 ? ' (7d avg: ' + Number(cm.avg7).toFixed(2) + ')' : ''}`, 'success', 4000);
+      renderTracker();
+      updateTopbarKpis();
+      syncToSheets();
+    }
+  } catch (err) {
+    console.error('TCGdex fetch error:', err);
+    showToast(`Failed to fetch price for "${card.name}": ${err.message}`, 'error');
+  } finally {
+    // Restore button if still in DOM (renderTracker may have re-rendered it)
+    const btn2 = document.getElementById(`fetchBtn-${cardId}`);
+    if (btn2) {
+      btn2.disabled = false;
+      btn2.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>';
+    }
+  }
+}
+
+async function refreshAllPrices() {
+  const toFetch = state.cards.filter(c => c.tcgdexId && c.game === 'Pokémon');
+  if (toFetch.length === 0) {
+    showToast('No Pokémon cards with a TCGdex ID found. Add a TCGdex ID via Edit.', 'info', 4000);
+    return;
+  }
+
+  const btn = document.getElementById('refreshPricesBtn');
+  if (btn) { btn.disabled = true; btn.textContent = `Fetching (0/${toFetch.length})…`; }
+
+  let done = 0, success = 0, fail = 0;
+  for (const card of toFetch) {
+    try {
+      let rId = card.tcgdexId.trim();
+      let res = await fetch(`https://api.tcgdex.net/v2/en/cards/${encodeURIComponent(rId)}`);
+      if (!res.ok) {
+        const lh = rId.lastIndexOf('-');
+        if (lh > 0) {
+          const sp = rId.slice(0, lh);
+          const np = rId.slice(lh + 1).replace(/^\d+$/, n => n.padStart(3, '0'));
+          const pid = `${sp}-${np}`;
+          if (pid !== rId) res = await fetch(`https://api.tcgdex.net/v2/en/cards/${encodeURIComponent(pid)}`);
+        }
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      const pricing = data.pricing || {};
+      const { cmPrice, tcpPrice, cm } = getPriceForVariation(pricing, card.variation);
+
+      let livePrice = null, livePriceCurrency = null;
+      if (cmPrice != null) { livePrice = Number(cmPrice); livePriceCurrency = 'EUR'; }
+      else if (tcpPrice != null) { livePrice = Number(tcpPrice); livePriceCurrency = 'USD'; }
+
+      if (livePrice !== null) {
+        card.livePrice = livePrice;
+        card.livePriceCurrency = livePriceCurrency;
+        card.livePriceFetchedAt = Date.now();
+        card.priceAvg7  = cm ? (Number(cm.avg7)  || null) : null;
+        card.priceAvg30 = cm ? (Number(cm.avg30) || null) : null;
+        card.priceHistory = card.priceHistory || [];
+        card.priceHistory.push({ date: Date.now(), price: livePrice, currency: livePriceCurrency, source: 'tcgdex' });
+        if (data.image && !card.imageUrl) card.imageUrl = data.image + '/low.webp';
+        success++;
+      } else {
+        fail++;
+      }
+    } catch (e) {
+      fail++;
+    }
+    done++;
+    if (btn) btn.textContent = `Fetching (${done}/${toFetch.length})…`;
+    // Small delay to be polite to the API
+    if (done < toFetch.length) await new Promise(r => setTimeout(r, 250));
+  }
+
+  if (btn) {
+    btn.disabled = false;
+    btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> Refresh Prices';
+  }
+  renderTracker();
+  updateTopbarKpis();
+  syncToSheets();
+  showToast(`Prices refreshed: ${success} updated, ${fail} failed`, success > 0 ? 'success' : 'info', 4000);
 }
 
 // =========================================
@@ -2990,7 +3291,7 @@ function renderCollection() {
 // =========================================
 function renderDashboard() {
   const totalCards = state.cards.length;
-  const hotCards = state.cards.filter(c => computeSignal(c.mentions) === 'hot').length;
+  const hotCards = state.cards.filter(c => computeSignal(c) === 'hot').length;
   const hotSealed = state.sealed.filter(s => computeSignal(s.mentions) === 'hot').length;
   const totalMentions = state.cards.reduce((a,c) => a + (Number(c.mentions)||0), 0);
 
@@ -3027,7 +3328,7 @@ function renderSignalChart() {
 
   const sigCounts = { hot:0, strong:0, buy:0, warm:0, watch:0, dip:0 };
   state.cards.forEach(c => {
-    const s = computeSignal(c.mentions);
+    const s = computeSignal(c);
     if (s in sigCounts) sigCounts[s]++;
   });
 
@@ -3118,7 +3419,7 @@ function renderLeaderboard() {
           <span class="mention-num">${c.mentions}</span>
         </div>
       </td>
-      <td>${signalBadge(computeSignal(c.mentions))}</td>
+      <td>${signalBadge(computeSignal(c))}</td>
       <td class="muted">${fmtDate(c.firstSeen)}</td>
     </tr>`;
   }).join('');
@@ -3296,7 +3597,7 @@ function exportCSV() {
   const rows = [
     ['Name','Game','Set','Mentions','Signal','Last Price','Currency','First Seen','Notes'],
     ...state.cards.map(c => [
-      c.name, c.game, c.set||'', c.mentions, computeSignal(c.mentions),
+      c.name, c.game, c.set||'', c.mentions, computeSignal(c),
       lastPrice(c) || '', lastCurrency(c), fmtDate(c.firstSeen), c.notes||''
     ])
   ];
