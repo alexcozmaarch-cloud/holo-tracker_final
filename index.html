@@ -13,7 +13,7 @@
 body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;overflow-x:hidden;}
 body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(77,159,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(77,159,255,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
 body::after{content:'';position:fixed;top:-200px;right:-200px;width:600px;height:600px;background:radial-gradient(circle,rgba(183,127,255,0.08) 0%,transparent 70%);pointer-events:none;z-index:0;}
-.wrap{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:0 16px 80px;}
+.wrap{position:relative;z-index:1;max-width:1400px;margin:0 auto;padding:0 16px 80px;}
 
 /* HEADER */
 header{padding:28px 0 24px;display:flex;align-items:flex-end;justify-content:space-between;border-bottom:1px solid var(--border);margin-bottom:24px;gap:16px;flex-wrap:wrap;}
@@ -88,28 +88,15 @@ header{padding:28px 0 24px;display:flex;align-items:flex-end;justify-content:spa
 
 /* TABLE */
 .cards-table{width:100%;border-collapse:collapse;}
-.cards-table thead th{font-family:DM Mono,monospace;font-size:10px;letter-spacing:0.1em;color:var(--text-dim);text-transform:uppercase;text-align:left;padding:9px 12px;border-bottom:1px solid var(--border);white-space:nowrap;}
+.cards-table thead th{font-family:DM Mono,monospace;font-size:10px;letter-spacing:0.1em;color:var(--text-dim);text-transform:uppercase;text-align:left;padding:9px 8px;border-bottom:1px solid var(--border);white-space:nowrap;}
 .card-row{border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.15s;animation:rowIn 0.3s ease both;}
 @keyframes rowIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:translateX(0)}}
 .card-row:hover{background:rgba(255,255,255,0.02);}
-.card-row td{padding:8px 10px;vertical-align:middle;}
+.card-row td{padding:8px 8px;vertical-align:middle;}
 .card-name{font-weight:600;font-size:13px;color:var(--text);}
 .card-set{font-family:DM Mono,monospace;font-size:10px;color:var(--text-dim);margin-top:1px;}
 .card-note-preview{font-family:DM Mono,monospace;font-size:10px;color:var(--text-dimmer);font-style:italic;margin-top:2px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .set-badge{display:inline-block;background:var(--surface);border:1px solid var(--border);border-radius:2px;padding:2px 7px;font-family:DM Mono,monospace;font-size:10px;color:var(--blue);}
-.sid-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:2px;font-family:'DM Mono',monospace;font-size:10px;font-weight:600;white-space:nowrap;}
-.sid-sv{background:rgba(183,127,255,0.15);border:1px solid rgba(183,127,255,0.4);color:#b77fff;}
-.sid-swsh{background:rgba(77,159,255,0.15);border:1px solid rgba(77,159,255,0.4);color:#4d9fff;}
-.sid-sm{background:rgba(245,200,66,0.15);border:1px solid rgba(245,200,66,0.4);color:#f5c842;}
-.sid-xy{background:rgba(57,217,138,0.15);border:1px solid rgba(57,217,138,0.4);color:#39d98a;}
-.sid-bw{background:rgba(255,107,53,0.15);border:1px solid rgba(255,107,53,0.4);color:#ff6b35;}
-.sid-promo{background:rgba(255,77,109,0.15);border:1px solid rgba(255,77,109,0.4);color:#ff4d6d;}
-.sid-other{background:rgba(122,122,154,0.15);border:1px solid rgba(122,122,154,0.3);color:#7a7a9a;}
-.age-pip{width:5px;height:5px;border-radius:50%;display:inline-block;flex-shrink:0;}
-.age-new{background:#39d98a;box-shadow:0 0 4px #39d98a;}
-.age-recent{background:#f5c842;}
-.age-mid{background:#7a7a9a;}
-.age-old{background:#44445a;}
 .price-val{font-family:'Bebas Neue',sans-serif;font-size:19px;color:var(--gold);}
 .mentions-wrap{display:flex;align-items:center;gap:6px;}
 .mentions-num{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--text);}
@@ -117,7 +104,7 @@ header{padding:28px 0 24px;display:flex;align-items:flex-end;justify-content:spa
 .mdot{width:5px;height:5px;border-radius:50%;background:var(--border);}
 .mdot.on{background:var(--purple);}
 .date-val{font-family:DM Mono,monospace;font-size:10px;color:var(--text-dim);}
-.badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:2px;font-family:DM Mono,monospace;font-size:10px;text-transform:uppercase;white-space:nowrap;}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 7px;border-radius:2px;font-family:DM Mono,monospace;font-size:10px;text-transform:uppercase;white-space:nowrap;}
 .badge.hot{background:rgba(255,107,53,0.12);border:1px solid rgba(255,107,53,0.4);color:var(--hot);}
 .badge.warm{background:rgba(245,200,66,0.1);border:1px solid rgba(245,200,66,0.35);color:var(--gold);}
 .badge.watch{background:rgba(77,159,255,0.1);border:1px solid rgba(77,159,255,0.35);color:var(--blue);}
@@ -126,6 +113,35 @@ header{padding:28px 0 24px;display:flex;align-items:flex-end;justify-content:spa
 .badge.hot .bdot{animation:bdp 1.2s infinite;}
 .badge.cold .bdot{animation:none;}
 @keyframes bdp{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(0.6)}}
+/* ── MOMENTUM BADGE ── */
+.mbadge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:2px;font-family:DM Mono,monospace;font-size:9px;text-transform:uppercase;white-space:nowrap;letter-spacing:0.05em;font-weight:600;margin-top:3px;}
+.mbadge.rocket{background:rgba(57,217,138,0.18);border:1px solid rgba(57,217,138,0.55);color:#39d98a;}
+.mbadge.climbing{background:rgba(77,159,255,0.12);border:1px solid rgba(77,159,255,0.4);color:#4d9fff;}
+.mbadge.flat{background:rgba(122,122,154,0.08);border:1px solid rgba(122,122,154,0.18);color:var(--text-dimmer);}
+.mbadge.dip{background:rgba(245,200,66,0.12);border:1px solid rgba(245,200,66,0.45);color:#f5c842;}
+.mbadge.drop{background:rgba(255,77,109,0.1);border:1px solid rgba(255,77,109,0.35);color:#ff4d6d;}
+.mbadge.stayaway{background:rgba(255,107,53,0.12);border:1px solid rgba(255,107,53,0.4);color:var(--hot);}
+/* ── SET ID BADGE ── */
+.set-id-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:2px;font-family:DM Mono,monospace;font-size:10px;font-weight:600;letter-spacing:0.08em;white-space:nowrap;cursor:default;}
+.sid-sv{background:rgba(183,127,255,0.15);border:1px solid rgba(183,127,255,0.4);color:#b77fff;}
+.sid-swsh{background:rgba(77,159,255,0.12);border:1px solid rgba(77,159,255,0.35);color:#4d9fff;}
+.sid-sm{background:rgba(57,217,138,0.1);border:1px solid rgba(57,217,138,0.3);color:#39d98a;}
+.sid-xy{background:rgba(255,152,0,0.1);border:1px solid rgba(255,152,0,0.35);color:#ff9800;}
+.sid-bw{background:rgba(245,200,66,0.1);border:1px solid rgba(245,200,66,0.3);color:#f5c842;}
+.sid-promo{background:rgba(255,77,109,0.1);border:1px solid rgba(255,77,109,0.35);color:#ff4d6d;}
+.sid-other{background:var(--surface);border:1px solid var(--border);color:var(--text-dim);}
+.age-pip{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+.age-new{background:#39d98a;box-shadow:0 0 4px #39d98a99;}
+.age-recent{background:#4d9fff;}
+.age-mid{background:#f5c842;}
+.age-old{background:#44445a;}
+/* ── AI TAKE ── */
+.ai-take{font-family:DM Mono,monospace;font-size:9px;line-height:1.5;max-width:150px;cursor:default;color:var(--text-dim);}
+.ai-take.loading{color:var(--text-dimmer);font-style:italic;}
+.ai-take.bullish{color:#39d98a;}
+.ai-take.bearish{color:#ff4d6d;}
+.ai-take.caution{color:#f5c842;}
+.ai-take.watchcol{color:#4d9fff;}
 .row-btns{display:flex;gap:6px;opacity:0;transition:opacity 0.15s;}
 .card-row:hover .row-btns{opacity:1;}
 .btn-xs{border-radius:2px;padding:3px 8px;font-family:DM Mono,monospace;font-size:10px;cursor:pointer;border:1px solid;}
@@ -474,6 +490,7 @@ hr.div{border:none;border-top:1px solid var(--border);margin:36px 0;}
     <button class="filter-btn" onclick="setFilter('warm',this)">⚡ Warm</button>
     <button class="filter-btn" onclick="setFilter('watch',this)">👁 Watch</button>
     <button class="filter-btn" onclick="setFilter('buyzone',this)" style="border-color:rgba(57,217,138,0.4);color:var(--green);">💚 Buy Zone</button>
+    <button class="filter-btn" onclick="setFilter('strongbuy',this)" style="border-color:rgba(57,217,138,0.7);color:#39d98a;background:rgba(57,217,138,0.07);">⭐ Strong Buy</button>
     <button class="filter-btn" onclick="setFilter('buydip',this)">🛒 Buy Dip</button>
     <select class="ctrl-select" id="in-sort" onchange="render()">
       <option value="mentions">Most Mentioned</option>
@@ -526,7 +543,7 @@ hr.div{border:none;border-top:1px solid var(--border);margin:36px 0;}
   <!-- DESKTOP TABLE -->
   <div class="desk-table">
     <table class="cards-table">
-      <thead><tr><th></th><th>Card · Notes</th><th>Game</th><th>Set ID</th><th>Last Price</th><th>Market</th><th>Mentions</th><th>Last Seen</th><th>Signal</th><th></th></tr></thead>
+      <thead><tr><th></th><th>Card · Notes</th><th>Game</th><th>Set ID</th><th>Last Price</th><th>Market · Momentum</th><th>Mentions</th><th>Last Seen</th><th>Signal</th><th>AI Take</th><th></th></tr></thead>
       <tbody id="tbody"></tbody>
     </table>
   </div>
@@ -773,6 +790,12 @@ hr.div{border:none;border-top:1px solid var(--border);margin:36px 0;}
 
   <div class="tab-content" id="tab-dashboard">
 
+    <!-- BUY ZONE ALERTS — full width, first -->
+    <div class="dash-box full" style="margin-bottom:20px;border-color:rgba(57,217,138,0.35);">
+      <div class="dash-label" style="color:var(--green);font-size:10px;letter-spacing:.18em;">💚 Buy Zone Alerts</div>
+      <div id="buyzoneAlerts"></div>
+    </div>
+
     <!-- STAT CARDS -->
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;">
       <div class="stat-card purple"><div class="stat-label">💼 Cards Portfolio</div><div class="stat-value" id="d-total">—</div><div class="stat-sub" id="d-total-change"></div></div>
@@ -792,10 +815,9 @@ hr.div{border:none;border-top:1px solid var(--border);margin:36px 0;}
       <div class="dash-box"><div class="dash-label">📅 This Week</div><div id="digest-content"></div></div>
     </div>
 
-    <!-- MOST MENTIONED + BUY ZONE -->
+    <!-- MOST MENTIONED -->
     <div class="dash-grid" style="margin-bottom:20px;">
-      <div class="dash-box"><div class="dash-label">🔥 Most Mentioned This Week</div><div id="most-mentioned-week"></div></div>
-      <div class="dash-box"><div class="dash-label">💚 Buy Zone Alerts</div><div id="buyzoneAlerts"></div></div>
+      <div class="dash-box full"><div class="dash-label">🔥 Most Mentioned This Week</div><div id="most-mentioned-week"></div></div>
     </div>
 
     <!-- ROI + SEALED VALUE -->
@@ -864,11 +886,9 @@ hr.div{border:none;border-top:1px solid var(--border);margin:36px 0;}
     <div class="desk-table">
       <table class="cards-table" style="table-layout:fixed;">
         <thead><tr>
-          <th style="width:38%;">Set Name</th>
-          <th style="width:18%;">TCGdex ID</th>
-          <th style="width:10%;text-align:center;">Cards</th>
-          <th style="width:14%;text-align:center;">Release</th>
-          <th style="width:20%;text-align:center;">Series</th>
+          <th style="width:55%;">Set · ID</th>
+          <th style="width:15%;text-align:center;">Cards</th>
+          <th style="width:30%;text-align:center;">Release · Series</th>
         </tr></thead>
         <tbody id="sets-tbody"></tbody>
       </table>
@@ -981,7 +1001,11 @@ hr.div{border:none;border-top:1px solid var(--border);margin:36px 0;}
     <div id="m-prices"></div>
 
     <!-- AI take -->
-    <div class="modal-sec" style="margin-top:18px;">🤖 AI Investment Take</div>
+    <div class="modal-sec" style="margin-top:18px;display:flex;align-items:center;justify-content:space-between;">
+      <span>🤖 AI Investment Take</span>
+      <button onclick="refreshModalAI()" style="background:none;border:1px solid var(--border);border-radius:2px;padding:2px 8px;color:var(--text-dim);font-family:DM Mono,monospace;font-size:9px;cursor:pointer;letter-spacing:.05em;">↻ Refresh</button>
+    </div>
+    <div id="m-momentum-row" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;min-height:20px;"></div>
     <div class="ai-box" id="m-ai"></div>
   </div>
 </div>
@@ -1021,13 +1045,15 @@ function clearCache(){ _cache = {}; }
 // Signal and buyZone use c.cmLive transparently whether fresh or week-old.
 
 const PRICES_SHEET_KEY = 'holo_cm_prices_v1'; // localStorage key
-let _cmPrices = {};
+let _cmPrices = {}; // { cardId: {price,trend,avg7,avg30,low,week,tcgdexId} }
 
-// ── Declared early to avoid before-initialization errors ──────────────────────
+// ── TCGdex SETS — declared here to avoid "before initialization" errors ───────
 var SETS_CACHE_KEY = 'holo_tcgdex_sets_v1';
-var SETS_CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
-let _setsData = [];
-var _collMktCache = {}; // { cardId: {price,trend,avg7,avg30,low,week,tcgdexId} }
+var SETS_CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
+let _setsData = []; // [{id, name, releaseDate, cardCount}]
+
+// ── Collection market price cache — declared early to avoid init errors ────────
+var _collMktCache = {}; // key = "name|||set|||variation"
 
 // Load CM prices from localStorage into cards[] on startup
 function loadCMPricesFromCache(){
@@ -1037,7 +1063,7 @@ function loadCMPricesFromCache(){
     _cmPrices = JSON.parse(raw);
     // Apply to cards
     cards.forEach(c=>{
-      if(_cmPrices[c.id]) c.cmLive = _cmPrices[c.id];
+      if(_cmPrices[c.id]?.price>0) c.cmLive = _cmPrices[c.id];
     });
   }catch(e){ console.log('[cm prices] load error',e.message); }
 }
@@ -1079,24 +1105,55 @@ async function tcgdexFetch(url){
       const j = await r.json();
       if(j.error) throw new Error(j.error);
       return j.data;
-    }catch(e){ console.log('[proxy]',e.message,url.slice(40)); }
+    }catch(e){
+      console.log('[proxy]',e.message,url.slice(40));
+      throw e; // propagate — don't fall through to CORS-blocked direct fetch
+    }
   }
-  // Direct fallback
+  // Direct fallback (only reached when no scriptUrl — offline/dev mode)
   const r = await Promise.race([fetch(url), T(10000)]);
   if(!r.ok) throw new Error('HTTP '+r.status);
   return r.json();
 }
 
-// ── Parse set field: "svp-SV120" → {setId:"svp", localId:"120"} ────
+// ── Parse set field: "svp-120" → {setId:"svp", localId:"120"} ────
+// Promo rules:
+//   svp   (SV Black Star)   → bare number:   svp/120
+//   swshp (SWSH Black Star) → keeps prefix:  swshp/SV144
+//   smp   (SM Black Star)   → keeps prefix:  smp/SM120
+//   xyp   (XY Black Star)   → keeps prefix:  xyp/XY120
+var _PROMO_KEEP_PREFIX = new Set(['swshp','smp','xyp','bwp']);
+var _aiTakeCache = {};
+var _aiTakePending = new Set();
+var _SET_RELEASE = {
+  'sv01':new Date('2023-03-31'),'sv02':new Date('2023-06-09'),'sv03':new Date('2023-09-22'),
+  'sv03.5':new Date('2023-10-06'),'sv04':new Date('2023-11-03'),'sv04.5':new Date('2023-12-08'),
+  'sv05':new Date('2024-01-26'),'sv06':new Date('2024-03-22'),'sv06.5':new Date('2024-05-24'),
+  'sv07':new Date('2024-07-19'),'sv07.5':new Date('2024-08-02'),'sv08':new Date('2024-11-01'),
+  'sv08.5':new Date('2024-11-08'),'sv09':new Date('2025-01-17'),'sv09.5':new Date('2025-03-28'),
+  'sv10':new Date('2025-05-30'),'sv11':new Date('2025-08-29'),'svp':new Date('2023-01-01'),
+  'swsh1':new Date('2020-02-07'),'swsh2':new Date('2020-05-01'),'swsh3':new Date('2020-08-14'),
+  'swsh3.5':new Date('2020-10-09'),'swsh4':new Date('2020-11-13'),'swsh4.5':new Date('2021-01-22'),
+  'swsh5':new Date('2021-03-19'),'swsh6':new Date('2021-06-18'),'swsh7':new Date('2021-08-27'),
+  'swsh7.5':new Date('2021-10-08'),'swsh8':new Date('2021-11-12'),'swsh9':new Date('2022-02-25'),
+  'swsh10':new Date('2022-05-27'),'swsh11':new Date('2022-09-09'),'swsh12':new Date('2022-11-11'),
+  'swsh12.5':new Date('2022-12-02'),'swshp':new Date('2020-01-01'),
+  'sm1':new Date('2017-02-03'),'sm2':new Date('2017-05-05'),'sm3':new Date('2017-08-04'),
+  'sm3.5':new Date('2017-10-06'),'sm4':new Date('2017-11-03'),'sm4.5':new Date('2018-02-02'),
+  'sm5':new Date('2018-04-06'),'sm6':new Date('2018-08-03'),'sm7':new Date('2018-11-02'),
+  'sm7.5':new Date('2018-12-07'),'sm8':new Date('2019-01-11'),'sm9':new Date('2019-04-05'),
+  'sm10':new Date('2019-07-12'),'sm11':new Date('2019-08-02'),'sm12':new Date('2020-01-17'),
+  'smp':new Date('2017-01-01')
+};
 function parseSetField(raw){
   const s = String(raw||'').trim();
   if(!s) return {setId:null,localId:null};
   let setId=null, localId=null;
-  // Space: "sv03.5 199"
+  // Space: "sv03.5 199" or "swshp SV144"
   const sp = s.indexOf(' ');
   if(sp>0){ setId=s.slice(0,sp).toLowerCase(); localId=s.slice(sp+1).trim(); }
   else {
-    // Hyphen: "svp-SV120" "sv03.5-199"
+    // Hyphen: "svp-120" "swshp-SV144" "sv03.5-199"
     const hy = s.lastIndexOf('-');
     if(hy>0){
       const b=s.slice(0,hy), a=s.slice(hy+1);
@@ -1104,50 +1161,23 @@ function parseSetField(raw){
     }
   }
   if(setId && localId){
-    // Strip set-code letter prefix from localId: SV174→174, SWSH144→144, XY107→107
-    const m = localId.match(/^([A-Za-z]+)(\d+.*)$/);
-    if(m){
-      const lp=m[1].toUpperCase(), np=m[2];
-      const sid=setId.toUpperCase().replace(/[^A-Z]/g,'');
-      if(sid.includes(lp)||lp.includes(sid.slice(0,2))) localId=np;
+    if(_PROMO_KEEP_PREFIX.has(setId)){
+      // Keep prefix as-is (swshp/SV144, smp/SM120, etc.)
+    } else if(setId === 'svp'){
+      // svp uses bare numbers: SV120 → 120
+      localId = localId.replace(/^SV/i,'');
+    } else {
+      // Regular sets: strip letter prefix matching set code
+      const m = localId.match(/^([A-Za-z]+)(\d+.*)$/);
+      if(m){
+        const lp=m[1].toUpperCase(), np=m[2];
+        const sid=setId.toUpperCase().replace(/[^A-Z]/g,'');
+        if(sid.includes(lp)||lp.includes(sid.slice(0,2))) localId=np;
+      }
     }
     return {setId,localId};
   }
   return {setId:null, localId:s};
-}
-
-function _setIdFrom(sf){
-  var ps=parseSetField(sf||'');
-  if(ps.setId) return ps.setId;
-  var s=String(sf||'').trim().toLowerCase();
-  if(/^[a-z]{1,8}[\d.]*p?$/.test(s)) return s;
-  return null;
-}
-var _SET_RELEASE={'sv01':new Date('2023-03-31'),'sv02':new Date('2023-06-09'),'sv03':new Date('2023-09-22'),'sv03.5':new Date('2023-10-06'),'sv04':new Date('2023-11-03'),'sv04.5':new Date('2023-12-08'),'sv05':new Date('2024-01-26'),'sv06':new Date('2024-03-22'),'sv06.5':new Date('2024-05-24'),'sv07':new Date('2024-07-19'),'sv07.5':new Date('2024-08-02'),'sv08':new Date('2024-11-01'),'sv08.5':new Date('2024-11-08'),'sv09':new Date('2025-01-17'),'sv09.5':new Date('2025-03-28'),'sv10':new Date('2025-05-30'),'svp':new Date('2023-01-01'),'swsh1':new Date('2020-02-07'),'swsh2':new Date('2020-05-01'),'swsh3':new Date('2020-08-14'),'swsh4':new Date('2020-11-13'),'swsh5':new Date('2021-03-19'),'swsh6':new Date('2021-06-18'),'swsh7':new Date('2021-08-27'),'swsh8':new Date('2021-11-12'),'swsh9':new Date('2022-02-25'),'swsh10':new Date('2022-05-27'),'swsh11':new Date('2022-09-09'),'swsh12':new Date('2022-11-11'),'swsh12.5':new Date('2022-12-02'),'swshp':new Date('2020-01-01'),'sm1':new Date('2017-02-03'),'sm2':new Date('2017-05-05'),'sm3':new Date('2017-08-04'),'sm4':new Date('2017-11-03'),'sm5':new Date('2018-04-06'),'sm6':new Date('2018-08-03'),'sm7':new Date('2018-11-02'),'sm8':new Date('2019-01-11'),'sm9':new Date('2019-04-05'),'sm10':new Date('2019-07-12'),'sm11':new Date('2019-08-02'),'sm12':new Date('2020-01-17'),'smp':new Date('2017-01-01')};
-function _agePip(sid){
-  if(!sid) return 'age-old';
-  var rel=_SET_RELEASE[sid.toLowerCase()];
-  if(!rel) return 'age-old';
-  var m=(Date.now()-rel)/(1000*60*60*24*30);
-  return m<3?'age-new':m<12?'age-recent':m<36?'age-mid':'age-old';
-}
-function _sidColor(sid){
-  if(!sid) return 'sid-other';
-  var s=sid.toLowerCase();
-  if(s.endsWith('p')) return 'sid-promo';
-  if(s.startsWith('sv')) return 'sid-sv';
-  if(s.startsWith('swsh')) return 'sid-swsh';
-  if(s.startsWith('sm')) return 'sid-sm';
-  if(s.startsWith('xy')) return 'sid-xy';
-  if(s.startsWith('bw')) return 'sid-bw';
-  return 'sid-other';
-}
-function setIdBadgeHtml(sf){
-  var sid=_setIdFrom(sf);
-  var disp=sid?sid.toUpperCase():(String(sf||'').trim().slice(0,8)||'—');
-  var col=_sidColor(sid);
-  var pip=_agePip(sid);
-  return '<span class="sid-badge '+col+'" title="'+esc(sid||disp)+'">'+esc(disp)+'<span class="age-pip '+pip+'"></span></span>';
 }
 
 // ── Parse Cardmarket pricing from TCGdex card detail ────────────────
@@ -1237,6 +1267,7 @@ let _cmFetchRunning = false;
 async function scheduleCMBgFetch(forceAll){
   if(_cmFetchRunning) return;
   if(!cards.length) return;
+  if(!scriptUrl){ console.log('[prices] skipped — no scriptUrl yet (connect Google Sheets first)'); return; }
 
   const now = Date.now();
   const toFetch = cards.filter(c=>{
@@ -1269,6 +1300,7 @@ async function scheduleCMBgFetch(forceAll){
         const {detail, cm} = res;
         // Save tcgdexId for future lookups even if no price
         if(detail.id && !c.tcgdexId){ c.tcgdexId=detail.id; }
+        const eurRate = await fetchRateToCHF('EUR') || 1;
         const data = {
           price:    cm.price||null,
           trend:    cm.trend||null,
@@ -1278,6 +1310,7 @@ async function scheduleCMBgFetch(forceAll){
           image:    detail.image||null,
           tcgdexId: detail.id||null,
           fetchedAt: now,
+          eurRate:  eurRate,
         };
         _cmPrices[c.id] = data;
         if(cm.price > 0){
@@ -1324,7 +1357,7 @@ function _updatePriceStatus(msg){
 function refreshPrices(){
   // Reset fetchedAt so everything re-fetches
   Object.keys(_cmPrices).forEach(k=>{ _cmPrices[k].fetchedAt = 0; });
-  scheduleCMBgFetch();
+  scheduleCMBgFetch(true);
 }
 
 // ── 5. Sets list loader ───────────────────────────────────────────
@@ -1375,7 +1408,7 @@ async function loadSetsData(){
 async function saveCMPricesToSheet(){
   const rows = Object.entries(_cmPrices).map(([cardId,d])=>[
     cardId, d.tcgdexId||'', d.week||'', d.price||'',
-    d.trend||'', d.avg7||'', d.avg30||'', d.low||'', d.fetchedAt||''
+    d.trend||'', d.avg7||'', d.avg30||'', d.low||'', d.fetchedAt||'', d.eurRate||''
   ]);
   if(!rows.length) return;
   await fetch(scriptUrl,{method:'POST',body:JSON.stringify({action:'saveCMPrices',rows})});
@@ -1393,12 +1426,13 @@ function applyCMPrices(priceRows){
       avg7:    parseFloat(r[5])||null,
       avg30:   parseFloat(r[6])||null,
       low:     parseFloat(r[7])||null,
-      fetchedAt:parseInt(r[8])||0
+      fetchedAt:parseInt(r[8])||0,
+      eurRate: parseFloat(r[9])||null
     };
   });
-  // Apply to cards
+  // Apply to cards — only when price is valid
   cards.forEach(c=>{
-    if(_cmPrices[c.id]) c.cmLive = _cmPrices[c.id];
+    if(_cmPrices[c.id]?.price>0) c.cmLive = _cmPrices[c.id];
   });
   localStorage.setItem(PRICES_SHEET_KEY, JSON.stringify(_cmPrices));
 }
@@ -1409,7 +1443,7 @@ function applyCMPrices(priceRows){
   try{ cards = normaliseCards(JSON.parse(localStorage.getItem(KEY_CACHE)||'[]')); }catch{ cards=[]; }
   // Load weekly CM prices into cards before first render
   try{ _cmPrices=JSON.parse(localStorage.getItem(PRICES_SHEET_KEY)||'{}'); }catch{}
-  cards.forEach(c=>{ if(_cmPrices[c.id]) c.cmLive=_cmPrices[c.id]; });
+  cards.forEach(c=>{ if(_cmPrices[c.id]?.price>0) c.cmLive=_cmPrices[c.id]; });
   try{ sealed     = JSON.parse(localStorage.getItem(KEY_SCACHE) || '[]'); }catch{}
   try{ collection = JSON.parse(localStorage.getItem(KEY_COLL)    || '[]'); }catch{}
   render(); if(typeof renderSealed==='function') renderSealed();
@@ -1501,6 +1535,7 @@ async function connectSheet(){
     setSyncing('synced', 'Connected · '+new Date().toLocaleTimeString());
     render();
     toast('Connected to Google Sheets! ✅','success');
+    scheduleCMBgFetch(); // kick off price fetch now that cards are loaded
   }catch(err){
     setSyncing('error','Connection failed');
     showMsg('❌ '+err.message, 'err');
@@ -1536,7 +1571,7 @@ async function loadSheet(){
     collection = data.collection || collection;
     // Apply weekly CM prices from Sheets
     if(data.cmPrices) applyCMPrices(data.cmPrices);
-    else { cards.forEach(c=>{ if(_cmPrices[c.id]) c.cmLive=_cmPrices[c.id]; }); }
+    else { cards.forEach(c=>{ if(_cmPrices[c.id]?.price>0) c.cmLive=_cmPrices[c.id]; }); }
     localStorage.setItem(KEY_CACHE,  JSON.stringify(cards));
     localStorage.setItem(KEY_SCACHE, JSON.stringify(sealed));
     localStorage.setItem(KEY_COLL,   JSON.stringify(collection));
@@ -1573,6 +1608,8 @@ async function saveCard(action, payload){
     cards      = data.cards      || cards;
     sealed     = data.sealed     || sealed;
     if(data.collection) collection = data.collection;
+    // Re-attach cmLive after server replaces the cards array
+    cards.forEach(c=>{ if(_cmPrices[c.id]?.price>0) c.cmLive=_cmPrices[c.id]; });
     localStorage.setItem(KEY_CACHE,  JSON.stringify(cards));
     localStorage.setItem(KEY_SCACHE, JSON.stringify(sealed));
     localStorage.setItem(KEY_COLL,   JSON.stringify(collection));
@@ -1593,10 +1630,6 @@ async function saveCard(action, payload){
 // ── TCGdex SETS AUTOCOMPLETE ─────────────────────────────────────────────────
 // Fetched once on startup, cached in localStorage for 7 days.
 // Enables set name autocomplete on all Set fields.
-
-// (declared at top)
-// (declared at top)
-// (declared at top of script)
 
 function deriveSeries(id){
   if(!id) return '—';
@@ -1692,8 +1725,8 @@ function wireAllSetAutocompletes(){
 }
 
 // ── CURRENCY CONVERSION — cached, dual-source, 5s timeout ──────────────────
-const _rateCache = {}; // { 'EUR': {rate:1.02, ts:1234567890} }
-const RATE_TTL   = 60 * 60 * 1000; // 1 hour
+var _rateCache = {}; // { 'EUR': {rate:1.02, ts:1234567890} }
+var RATE_TTL   = 60 * 60 * 1000; // 1 hour
 
 async function fetchRateToCHF(fromCurrency){
   if(!fromCurrency || fromCurrency==='CHF') return 1;
@@ -2019,9 +2052,7 @@ function buyZone(c){
 
   // 5. CM live price dipping below your logged average (market entry signal)
   if(c.cmLive?.price && avg > 0){
-    const cmP  = c.cmLive.price;
-    const chfRate = c.priceHistory.find(e=>e.rate&&e.rate>0)?.rate || 1;
-    const cmInCHF = cmP * chfRate; // approximate EUR→CHF conversion
+    const cmInCHF = _cmChf(c.cmLive);
     if(cmInCHF > 0 && cmInCHF < avg * 0.93){
       const pct = Math.round((avg - cmInCHF)/avg*100);
       reasons.push('CM live '+pct+'% below your avg');
@@ -2082,19 +2113,17 @@ function signal(c){
   // Price level
   if(avg>=100)s+=2; else if(avg>=30)s+=1;
 
-  // Live CM price signal boost — use when available
+  // Live CM price signal boost — use when available (compare CHF vs CHF)
   if(c.cmLive?.price){
-    const cmP  = c.cmLive.price;
-    const ref  = lp > 0 ? lp : avg; // compare against logged price, or avg
-    if(ref > 0){
-      const diff = (cmP - ref) / ref;
-      // CM trending up strongly vs logged = price rising on market
-      if(diff > 0.15)  s += 2;
-      else if(diff > 0.05) s += 1;
-      // CM trending down vs logged = possible dip entry
+    const cmChf = _cmChf(c.cmLive);
+    const ref   = lp > 0 ? lp : avg;
+    if(cmChf && ref > 0){
+      const diff = (cmChf - ref) / ref;
+      if(diff > 0.15)       s += 2;
+      else if(diff > 0.05)  s += 1;
       else if(diff < -0.10) s -= 1;
     }
-    // CM trend price rising = market momentum
+    // CM trend momentum (EUR ratios stay valid — no conversion needed)
     if(c.cmLive.trend && c.cmLive.avg7){
       const momentum = (c.cmLive.trend - c.cmLive.avg7) / c.cmLive.avg7;
       if(momentum > 0.05) s += 1;
@@ -2134,6 +2163,165 @@ function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
 function tagHtml(g){ return `<span class="tag tag-${g||'other'}">${esc(GAMES[g]||g||'Other')}</span>`; }
 function badgeHtml(s){ return `<span class="badge ${s}"><span class="bdot"></span>${sigLabel(s)}</span>`; }
 
+// Convert CM EUR price to CHF using stored day-rate (falls back to live cache, then 1:1)
+function _cmChf(cm){
+  if(!cm||!cm.price) return null;
+  var rate = cm.eurRate || (_rateCache&&_rateCache['EUR']&&_rateCache['EUR'].rate) || 1;
+  return cm.price * rate;
+}
+
+// ── SET ID + AGE HELPERS ──────────────────────────────────────────────────────
+function _setIdFrom(setField){
+  var ps = parseSetField(setField||'');
+  if(ps.setId) return ps.setId;
+  var s = String(setField||'').trim().toLowerCase();
+  if(/^[a-z]{1,6}[\d.]*p?$/.test(s)) return s;
+  return null;
+}
+
+function _agePip(setId){
+  if(!setId) return 'age-old';
+  var rel = _SET_RELEASE[setId.toLowerCase()];
+  if(!rel) return 'age-old';
+  var mths = (Date.now()-rel)/(1000*60*60*24*30);
+  if(mths<3)  return 'age-new';
+  if(mths<12) return 'age-recent';
+  if(mths<36) return 'age-mid';
+  return 'age-old';
+}
+
+function _ageLabel(pip){
+  return {
+    'age-new':'New set (<3 months)',
+    'age-recent':'Recent set (3–12 months)',
+    'age-mid':'Established (1–3 years)',
+    'age-old':'Legacy / vintage'
+  }[pip]||'';
+}
+
+function _sidColor(setId){
+  if(!setId) return 'sid-other';
+  var s=setId.toLowerCase();
+  if(s.endsWith('p'))    return 'sid-promo';
+  if(s.startsWith('sv')) return 'sid-sv';
+  if(s.startsWith('swsh')) return 'sid-swsh';
+  if(s.startsWith('sm')) return 'sid-sm';
+  if(s.startsWith('xy')) return 'sid-xy';
+  if(s.startsWith('bw')) return 'sid-bw';
+  return 'sid-other';
+}
+
+function setIdBadgeHtml(setField){
+  var sid = _setIdFrom(setField);
+  var display = sid ? sid.toUpperCase() : (String(setField||'').trim().slice(0,8)||'—');
+  var colorCls = _sidColor(sid);
+  var pip = _agePip(sid);
+  var tip = (sid||String(setField||'').trim()) + ' · ' + _ageLabel(pip);
+  return '<span class="set-id-badge '+colorCls+'" title="'+esc(tip)+'">'+esc(display)+'<span class="age-pip '+pip+'" title="'+_ageLabel(pip)+'"></span></span>';
+}
+
+// ── MOMENTUM BADGE ────────────────────────────────────────────────────────────
+function momentumBadge(c){
+  var cm = c.cmLive;
+  if(!cm||!cm.price) return '';
+  var lp = lastP(c);
+  if(lp<=0) return '';
+  var chf = _cmChf(cm);
+  if(!chf) return '';
+  var diff = (chf - lp) / lp * 100;
+  var chfAvg30 = cm.avg30 ? cm.avg30 * (cm.eurRate||1) : chf;
+  var velocity = chfAvg30 > 0 ? (chf - chfAvg30) / chfAvg30 * 100 : 0;
+  var cls,icon,label,tip;
+  if(diff>18 && velocity>10){
+    cls='stayaway'; icon='🔥'; label='STAY AWAY';
+    tip='+'+diff.toFixed(1)+'% above logged · climbing fast — possibly overbought';
+  } else if(diff>15){
+    cls='rocket'; icon='🚀'; label='ROCKET';
+    tip='+'+diff.toFixed(1)+'% above logged price';
+  } else if(diff>5){
+    cls='climbing'; icon='📈'; label='CLIMBING';
+    tip='+'+diff.toFixed(1)+'% above logged price';
+  } else if(diff>=-5){
+    cls='flat'; icon='➡'; label='FLAT';
+    tip='Within '+Math.abs(diff).toFixed(1)+'% of logged price';
+  } else if(diff>=-15){
+    cls='dip'; icon='📉'; label='PRICE DIP';
+    tip=diff.toFixed(1)+'% below logged — potential entry';
+  } else {
+    cls='drop'; icon='⬇'; label='DROPPED';
+    tip=diff.toFixed(1)+'% below logged — significant drop';
+  }
+  return '<span class="mbadge '+cls+'" title="'+esc(tip)+'">'+icon+' '+label+'</span>';
+}
+
+// ── AI TAKE (inline table cell, lazy-fetched per card) ───────────────────────
+function _aiVerdict(text){
+  var v = text.split('·')[0].trim().toUpperCase();
+  if(v==='BUY')   return 'bullish';
+  if(v==='AVOID'||v==='SELL') return 'bearish';
+  if(v==='WATCH') return 'watchcol';
+  if(v==='HOLD')  return 'caution';
+  return '';
+}
+
+function aiTakeCellHtml(c){
+  if(_aiTakeCache[c.id]){
+    var text = _aiTakeCache[c.id];
+    if(text==='—') return '<span class="ai-take" data-aitake="'+c.id+'">—</span>';
+    var cls = _aiVerdict(text);
+    return '<span class="ai-take '+cls+'" data-aitake="'+c.id+'" title="'+esc(text)+'">'+esc(text)+'</span>';
+  }
+  // Trigger background fetch
+  setTimeout(function(){ _fetchAITake(c.id); }, 0);
+  return '<span class="ai-take loading" data-aitake="'+c.id+'">analyzing…</span>';
+}
+
+async function _fetchAITake(cardId){
+  if(_aiTakePending.has(cardId)) return;
+  _aiTakePending.add(cardId);
+  var c = cards.find(function(x){ return x.id===cardId; });
+  if(!c){ _aiTakePending.delete(cardId); return; }
+  try{
+    var lp = lastP(c);
+    var p  = (c.priceHistory||[]).map(function(x){ return x.price; }).filter(function(v){ return v>0; });
+    var avg = p.length ? (p.reduce(function(a,b){return a+b;},0)/p.length).toFixed(2) : 'n/a';
+    var growth = p.length>1 ? (((p[p.length-1]-p[0])/p[0])*100).toFixed(1) : 'n/a';
+    var cm = c.cmLive;
+    var mktDiff = (cm&&cm.price&&lp>0) ? ((cm.price-lp)/lp*100).toFixed(1)+'%' : 'n/a';
+    var bz = buyZone(c);
+    var pa = priceAnalysis(c);
+    var prompt = 'TCG card investment. Reply with ONE line max 12 words. Format: "BUY · reason" or "HOLD · reason" or "WATCH · reason" or "AVOID · reason".\n'
+      +'Card: '+c.name+' ('+c.set+')\n'
+      +'Signal: '+signal(c)+' | Mentions: '+c.mentions+' | Trend: '+pa.trend+'\n'
+      +'Avg logged: CHF '+avg+' | Growth: '+growth+'% | CM market: '+(cm&&cm.price?'€'+cm.price.toFixed(2):'n/a')+' ('+mktDiff+' vs logged)\n'
+      +'Buy zone: '+bz.score+'/4 | '+bz.reasons.join(', ')+(pa.dipThenFlat?' | dip then flat — entry signal':'');
+    var res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:60,messages:[{role:'user',content:prompt}]})
+    });
+    var data = await res.json();
+    var text = (data&&data.content&&data.content[0]&&data.content[0].text)||'';
+    text = text.trim();
+    if(!text) throw new Error('empty');
+    _aiTakeCache[cardId] = text;
+    // Update all matching cells without full re-render
+    document.querySelectorAll('[data-aitake="'+cardId+'"]').forEach(function(el){
+      var cls = _aiVerdict(text);
+      el.textContent = text;
+      el.className = 'ai-take '+cls;
+      el.title = text;
+    });
+  } catch(e){
+    _aiTakeCache[cardId] = '—';
+    document.querySelectorAll('[data-aitake="'+cardId+'"]').forEach(function(el){
+      el.textContent='—'; el.className='ai-take';
+    });
+  } finally {
+    _aiTakePending.delete(cardId);
+  }
+}
+
 // ── RENDER ───────────────────────────────────────────────────────────────────
 function setFilter(f,btn){
   filter=f;
@@ -2146,7 +2334,7 @@ function getFiltered(){
   const sort= document.getElementById('in-sort').value;
   const gf  = document.getElementById('in-game-filter').value;
   let f = cards.filter(c=>
-    (filter==='all'||signal(c)===filter||(filter==='buyzone'&&buyZone(c).score>0)) &&
+    (filter==='all'||signal(c)===filter||(filter==='buyzone'&&buyZone(c).score>0)||(filter==='strongbuy'&&buyZone(c).score>=3)) &&
     (gf==='all'||c.game===gf) &&
     (String(c.name||'').toLowerCase().includes(q)||String(c.notes||'').toLowerCase().includes(q)||String(c.set||'').toLowerCase().includes(q))
   );
@@ -2168,8 +2356,8 @@ function getFiltered(){
 }
 
 function render(){
-  // Restore cmLive from _cmPrices cache — survives loadSheet() replacing the cards array
-  cards.forEach(c=>{ if(!c.cmLive && _cmPrices[c.id]?.price>0) c.cmLive = _cmPrices[c.id]; });
+  // Restore cmLive from _cmPrices cache — always sync so saveCard() replacements don't blank the column
+  cards.forEach(c=>{ if(_cmPrices[c.id]?.price>0) c.cmLive = _cmPrices[c.id]; });
   const allRows = getFiltered();
   const rows = showAll ? allRows : allRows.slice(0,20);
   document.getElementById('empty').style.display = allRows.length?'none':'block';
@@ -2198,11 +2386,11 @@ function render(){
       </td>
       <td>${tagHtml(c.game)}</td>
       <td style="white-space:nowrap;">${(()=>{
-        const {localId}=parseSetField(c.set||'');
-        const setName=(_setsData.find(s=>s.id===_setIdFrom(c.set))||{}).name||'';
+        const {localId} = parseSetField(c.set||'');
+        const setName = (_setsData.find(s=>s.id===_setIdFrom(c.set))||{}).name||'';
         return setIdBadgeHtml(c.set)
-          +(localId?` <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text);">${esc(localId)}</span>`:'')
-          +(setName?`<div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text-dim);margin-top:3px;white-space:normal;">${esc(setName)}</div>`:'');
+          + (localId ? `<span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text);margin-left:5px;">${esc(localId)}</span>` : '')
+          + (setName ? `<div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text-dim);margin-top:3px;white-space:normal;">${esc(setName)}</div>` : '');
       })()}</td>
       <td>
         <span class="price-val">${fmtCHF(lp)}</span>
@@ -2211,27 +2399,30 @@ function render(){
       <td>${(()=>{
         const cm=c.cmLive;
         if(!cm?.price) return `<span style="color:var(--text-dimmer);font-size:10px">\u2014</span>`;
+        const chf=_cmChf(cm);
         const lp=lastP(c);
-        const diff=lp>0?((cm.price-lp)/lp*100):0;
+        const diff=lp>0?((chf-lp)/lp*100):0;
         const absDiff=Math.abs(diff);
         const priceCol=diff>5?'var(--green)':diff<-5?'var(--red)':'var(--text)';
         const pctCol=diff>5?'var(--green)':diff<-5?'var(--red)':'var(--text-dim)';
         const arrow=absDiff>=1?(diff>=0?'▲':'▼'):'';
         const pct=absDiff>=1?`<span style="color:${pctCol};font-family:DM Mono,monospace;font-size:9px;font-weight:600;">${arrow}${absDiff.toFixed(1)}%</span>`:'';
         return `<div style="display:flex;flex-direction:column;gap:1px;">
-          <span style="font-family:'Bebas Neue',sans-serif;font-size:18px;line-height:1;color:${priceCol}">\u20AC${cm.price.toFixed(2)}</span>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:18px;line-height:1;color:${priceCol}">CHF ${chf.toFixed(2)}</span>
+          <span style="font-family:DM Mono,monospace;font-size:8px;color:var(--text-dimmer);">\u20AC${cm.price.toFixed(2)} · ${(cm.eurRate||1).toFixed(4)}</span>
           ${pct}
-          ${cm.week?`<span style="font-family:DM Mono,monospace;font-size:8px;color:var(--text-dimmer);">${cm.week}</span>`:''}
+          ${momentumBadge(c)}
         </div>`;
       })()}</td>
       <td><div class="mentions-wrap"><span class="mentions-num">${c.mentions}</span><div class="mdots">${c.mentions<=5?Array.from({length:c.mentions},()=>'<div class="mdot on"></div>').join('')+Array.from({length:5-c.mentions},()=>'<div class="mdot"></div>').join(''):Array.from({length:5},()=>'<div class="mdot on" style="background:var(--hot)"></div>').join('')+"<span style=\"font-family:DM Mono,monospace;font-size:9px;color:var(--hot);margin-left:3px\">+${c.mentions-5}</span>"}</div></div></td>
       <td>${lastSeenHtml(c)}</td>
       <td>
-        <div style="display:flex;flex-direction:row;gap:4px;align-items:center;flex-wrap:wrap;">
+        <div style="display:flex;flex-direction:row;gap:4px;align-items:center;flex-wrap:nowrap;">
           ${badgeHtml(s)}${c.target&&lp<=c.target?' <span style="color:var(--green);font-size:10px">✅</span>':''}
           ${buyZoneBadge(buyZone(c))}
         </div>
       </td>
+      <td>${aiTakeCellHtml(c)}</td>
       <td><div class="row-btns"><button class="btn-xs btn-mention" data-id="${c.id}">+1</button><button class="btn-xs btn-unmention" data-unmention="${c.id}">−1</button><button class="btn-xs btn-edit-row" data-edit="${c.id}" style="background:rgba(245,200,66,0.08);border-color:rgba(245,200,66,0.25);color:var(--gold);">✎</button><button class="btn-xs btn-del" data-del="${c.id}">✕</button></div></td>`;
     tr.querySelector('[data-star]').addEventListener('click', e=>{ e.stopPropagation(); togglePin(c.id); });
     tr.querySelector('[data-edit]').addEventListener('click', e=>{ e.stopPropagation(); openModal(c.id); setTimeout(()=>{ if(!document.getElementById('edit-panel').classList.contains('open')) toggleEditPanel(); },100); });
@@ -2355,7 +2546,7 @@ function renderPriceChart(c){
 }
 
 // ── LIVE PRICE via TCGdex (CORS-friendly, no key needed) ────────────────────
-const _cmCache = {};
+var _cmCache = {};
 async function fetchCMPrice(card){
   const box = document.getElementById('m-cm');
   const imgWrap = document.getElementById('m-card-img');
@@ -2598,9 +2789,8 @@ function updateCollMarket(){
   else el.textContent='No price logged yet';
 }
 
-// ── Collection market price cache (independent of tracker) ──────────────────
-// (declared at top of script)
-
+// ── Collection market price cache ─────────────────────────────────────────────
+// _collMktCache declared at top of script to avoid before-initialization errors
 async function fetchCollMarketPrice(name, set, variation, tcgdexId){
   const key = [name, set, variation||''].join('|||');
   if(_collMktCache[key] !== undefined) return _collMktCache[key];
@@ -2637,7 +2827,7 @@ function getCollMarketPrice(name, set, variation, tcgdexId){
 }
 
 // ── condLabel helper ──────────────────────────────────────────────────────────
-const VAR_SHORT = {normal:'Non-holo',holo:'Holo',reverse:'Rev.','full-art':'FA','alt-art':'Alt Art',promo:'Promo',special:'SIR'};
+var VAR_SHORT = {normal:'Non-holo',holo:'Holo',reverse:'Rev.','full-art':'FA','alt-art':'Alt Art',promo:'Promo',special:'SIR'};
 function collCondLabel(item){
   return (CONDITIONS[item.condition]||item.condition||'Raw')
     +(item.rawCondition?' · '+(RAW_SHORT[item.rawCondition]||item.rawCondition):'')
@@ -3176,22 +3366,58 @@ async function openModal(id){
   // Then fetch fresh live price from TCGdex (upgrades display if successful)
   fetchCMPrice(c).catch(()=>{});
 
-  const ai=document.getElementById('m-ai');
+  // Momentum row
+  setTimeout(()=>{
+    const mr=document.getElementById('m-momentum-row');
+    if(mr) mr.innerHTML=momentumBadge(c)||'<span style="font-family:DM Mono,monospace;font-size:9px;color:var(--text-dimmer);">Market data loading…</span>';
+  },300);
+
+  _runModalAI(c);
+}
+
+async function _runModalAI(c){
+  const ai=document.getElementById('m-ai'); if(!ai) return;
   ai.innerHTML='<div class="ai-load"><span></span><span></span><span></span>&nbsp;Analyzing…</div>';
   try{
-    const p=c.priceHistory.map(x=>x.price);
-    const avg=(p.reduce((a,b)=>a+b,0)/p.length).toFixed(2);
-    const growth=p.length>1?(((p[p.length-1]-p[0])/p[0])*100).toFixed(1):0;
-    const prompt=`You are a TCG investment analyst. Give a sharp 2-3 sentence opinion in under 80 words — buy, hold, or avoid?
-Card: "${c.name}", Game: ${GAMES[c.game]||'TCG'}, Set: ${c.set}, Mentions: ${c.mentions}, Avg price: $${avg}, Price change: ${growth}%, Signal: ${signal(c).toUpperCase()}${c.notes?', Notes: '+c.notes:''}.`;
+    const p=c.priceHistory.map(x=>x.price).filter(v=>v>0);
+    const avg=p.length?(p.reduce((a,b)=>a+b,0)/p.length).toFixed(2):'n/a';
+    const growth=p.length>1?(((p[p.length-1]-p[0])/p[0])*100).toFixed(1):'n/a';
+    const cm=c.cmLive;
+    const mktDiff=cm&&cm.price&&p.length?((cm.price-p[p.length-1])/p[p.length-1]*100).toFixed(1)+'%':'n/a';
+    const bz=buyZone(c);
+    const pa=priceAnalysis(c);
+    const sid=_setIdFrom(c.set);
+    const pip=_agePip(sid);
+    const ageStr=_ageLabel(pip);
+    const prompt=`You are a sharp TCG investment analyst. Give a 2-3 sentence verdict under 80 words. Lead with **BUY** / **HOLD** / **WATCH** / **AVOID** in bold. Be direct.
+
+Card: "${c.name}" | Set: ${c.set}${sid?' ('+sid.toUpperCase()+' — '+ageStr+')':''}
+Mentions: ${c.mentions} | Signal: ${signal(c).toUpperCase()} | Trend: ${pa.trend}
+Avg logged: CHF ${avg} | Growth: ${growth}%
+CM market: ${cm&&cm.price?'€'+cm.price.toFixed(2):'n/a'} (${mktDiff} vs logged) | 7d: ${cm&&cm.avg7?'€'+cm.avg7.toFixed(2):'—'} | 30d: ${cm&&cm.avg30?'€'+cm.avg30.toFixed(2):'—'}
+Buy zone: ${bz.score}/4 | ${bz.reasons.join(', ')||'no signals'}${pa.dipThenFlat?' | dip then flat — entry signal':''}${c.notes?' | Notes: '+c.notes:''}`;
     const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
     const data=await res.json();
-    ai.textContent=data.content?.find(b=>b.type==='text')?.text||'No analysis.';
+    const text=data.content?.find(b=>b.type==='text')?.text||'No analysis.';
+    ai.innerHTML='<div style="line-height:1.7;font-size:12px;">'+text.replace(/\*\*(BUY|HOLD|WATCH|AVOID|SELL)\*\*/g,(m,w)=>{
+      const col=w==='BUY'?'var(--green)':w==='AVOID'||w==='SELL'?'var(--red)':w==='WATCH'?'var(--blue)':'var(--gold)';
+      return `<span style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:${col};letter-spacing:1px;">${w}</span>`;
+    })+'</div>';
   }catch{
-    const fb={hot:'High buzz and rising prices — strong buy signal.',warm:'Gaining traction. Consider a small position.',watch:'Early interest. Wait for more data.',cold:'Low activity. Hold off for now.'};
-    ai.textContent=fb[signal(c)];
+    const fb={hot:'High buzz and rising prices — strong buy signal.',warm:'Gaining traction. Consider a small position.',watch:'Early interest. Wait for more data.',cold:'Low activity. Hold off for now.',buydip:'Classic dip then flatten — this is typically the optimal entry window.'};
+    ai.innerHTML='<div style="line-height:1.7;font-size:12px;">'+(fb[signal(c)]||'Insufficient data for analysis.')+'</div>';
   }
 }
+
+function refreshModalAI(){
+  if(!_modalCardId) return;
+  const c=cards.find(x=>x.id===_modalCardId); if(!c) return;
+  delete _aiTakeCache[c.id];
+  _runModalAI(c);
+  const mr=document.getElementById('m-momentum-row');
+  if(mr) mr.innerHTML=momentumBadge(c)||'<span style="font-family:DM Mono,monospace;font-size:9px;color:var(--text-dimmer);">No market data yet</span>';
+}
+
 function closeModal(){
   document.getElementById('modal').style.display='none';
   document.getElementById('edit-panel').classList.remove('open');
@@ -3326,11 +3552,17 @@ function renderSetsTab(){
     const series = s.series || deriveSeries(s.id);
     const seriesColor = {sv:'#b77fff',swsh:'#4d9fff',sm:'#f5c842',xy:'#39d98a',bw:'#ff6b35',dp:'#7a7a9a',ex:'#7a7a9a',base:'#7a7a9a'}[series?.toLowerCase()]||'#7a7a9a';
     return `<tr class="card-row set-row" data-id="${esc(s.id)}" onclick="copySetId('${esc(s.id)}')" style="cursor:pointer;" title="Click to copy ID: ${esc(s.id)}">
-      <td><div class="card-name">${esc(s.name)}</div></td>
-      <td><span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--purple);background:rgba(183,127,255,0.12);padding:2px 8px;border-radius:2px;">${esc(s.id)}</span></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
+          <span style="font-family:'DM Mono',monospace;font-size:10px;color:${seriesColor};background:${seriesColor}18;padding:1px 6px;border-radius:2px;text-transform:uppercase;white-space:nowrap;">${esc(series)}</span>
+          <span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--purple);font-weight:600;">${esc(s.id)}</span>
+        </div>
+        <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-dim);white-space:normal;line-height:1.3;">${esc(s.name)}</div>
+      </td>
       <td style="text-align:center;font-family:'DM Mono',monospace;font-size:11px;color:var(--text-dim);">${s.total||'—'}</td>
-      <td style="text-align:center;font-family:'DM Mono',monospace;font-size:11px;color:var(--text-dim);">${year}</td>
-      <td style="text-align:center;"><span style="font-family:'DM Mono',monospace;font-size:10px;color:${seriesColor};background:${seriesColor}18;padding:2px 8px;border-radius:2px;text-transform:uppercase;">${esc(series)}</span></td>
+      <td style="text-align:center;">
+        <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-dim);">${year}</div>
+      </td>
     </tr>`;
   }).join('');
 }
@@ -3444,40 +3676,80 @@ function renderSealedValueTracker(){
   }).join('');
 }
 
-// ── IMPROVED BUY ZONE ALERTS ──────────────────────────────────────────────────
+// ── BUY ZONE ALERTS ──────────────────────────────────────────────────────────
 function renderBuyZoneAlerts(){
   const el=document.getElementById('buyzoneAlerts'); if(!el) return;
   const ca=cards.map(c=>({c,bz:buyZone(c)})).filter(({bz})=>bz.score>0)
-    .sort((a,b)=>b.bz.score!==a.bz.score?b.bz.score-a.bz.score:b.c.mentions-a.c.mentions).slice(0,5);
-  const sa=sealed.filter(s=>s.mentions>=2).sort((a,b)=>b.mentions-a.mentions).slice(0,5);
+    .sort((a,b)=>b.bz.score!==a.bz.score?b.bz.score-a.bz.score:b.c.mentions-a.c.mentions).slice(0,10);
+  const sa=sealed.filter(s=>s.mentions>=2).sort((a,b)=>b.mentions-a.mentions).slice(0,10);
   if(!ca.length&&!sa.length){el.innerHTML='<div class="dash-empty">No buy zone alerts — log more prices and mentions</div>';return;}
-  const strongBadge='<span style="background:rgba(57,217,138,0.15);border:1px solid rgba(57,217,138,0.6);color:var(--green);font-family:DM Mono,monospace;font-size:9px;padding:2px 6px;border-radius:2px;white-space:nowrap;">⭐ STRONG BUY</span>';
-  const buyBadge='<span style="background:rgba(57,217,138,0.08);border:1px solid rgba(57,217,138,0.3);color:var(--green);font-family:DM Mono,monospace;font-size:9px;padding:2px 6px;border-radius:2px;white-space:nowrap;">💚 BUY</span>';
-  let html='<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">';
-  html+='<div><div style="font-family:DM Mono,monospace;font-size:9px;color:var(--purple);text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px;border-bottom:1px solid rgba(183,127,255,0.15);padding-bottom:6px;">🃏 Cards</div>';
-  if(ca.length) ca.forEach(({c,bz})=>{
-    html+=`<div style="padding:8px 0;border-bottom:1px solid var(--border);">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
-        <div style="min-width:0;"><div style="font-family:DM Mono,monospace;font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(c.name)}</div>
-        <div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text-dim);">${esc(String(c.set||'—'))} · ${fmtCHF(lastP(c))}</div></div>
-        ${bz.score>=2?strongBadge:buyBadge}</div>
-      <div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text-dimmer);margin-top:3px;">${bz.reasons.join(' · ')}</div>
-    </div>`;
-  });
-  else html+='<div class="dash-empty" style="padding:8px 0">None yet</div>';
-  html+='</div><div><div style="font-family:DM Mono,monospace;font-size:9px;color:var(--purple);text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px;border-bottom:1px solid rgba(183,127,255,0.15);padding-bottom:6px;">📦 Sealed</div>';
-  if(sa.length) sa.forEach(s=>{
-    const ph=s.priceHistory||[];
-    const trend=ph.length>=2?((ph[ph.length-1].price-ph[0].price)/ph[0].price*100):null;
-    html+=`<div style="padding:8px 0;border-bottom:1px solid var(--border);">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
-        <div style="min-width:0;"><div style="font-family:DM Mono,monospace;font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(s.name)}</div>
-        <div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text-dim);">${typeof STYPES!=='undefined'?(STYPES[s.type]||s.type):s.type} · ${s.mentions}m${s.lastPrice?' · '+fmtCHF(s.lastPrice):''}${trend!==null?' · <span style="color:'+(trend<0?'var(--green)':'var(--red)')+';">'+(trend>=0?'+':'')+trend.toFixed(1)+'%</span>':''}</div></div>
-        ${s.mentions>=3?strongBadge:buyBadge}</div>
-    </div>`;
-  });
-  else html+='<div class="dash-empty" style="padding:8px 0">None yet</div>';
-  html+='</div></div>';
+
+  const strongBadge='<span style="background:rgba(57,217,138,0.18);border:1px solid rgba(57,217,138,0.6);color:var(--green);font-family:DM Mono,monospace;font-size:9px;padding:3px 8px;border-radius:2px;white-space:nowrap;font-weight:600;">⭐ STRONG BUY</span>';
+  const buyBadge   ='<span style="background:rgba(57,217,138,0.08);border:1px solid rgba(57,217,138,0.3);color:var(--green);font-family:DM Mono,monospace;font-size:9px;padding:3px 8px;border-radius:2px;white-space:nowrap;">💚 BUY</span>';
+
+  let html='<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">';
+
+  // ── CARDS ──
+  html+='<div>';
+  html+='<div style="font-family:DM Mono,monospace;font-size:9px;color:var(--purple);text-transform:uppercase;letter-spacing:.15em;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid rgba(183,127,255,0.2);">🃏 Cards — '+ca.length+' alert'+(ca.length!==1?'s':'')+'</div>';
+  if(ca.length){
+    ca.forEach(({c,bz})=>{
+      const lp=lastP(c);
+      const cm=c.cmLive;
+      const cmChf=cm&&cm.price?_cmChf(cm):null;
+      const diff=cmChf&&lp>0?((cmChf-lp)/lp*100):null;
+      const diffStr=diff!==null?`<span style="color:${diff>=0?'var(--red)':'var(--green)'};">${diff>=0?'▲':'▼'}${Math.abs(diff).toFixed(1)}%</span>`:'';
+      html+=`<div style="padding:10px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+        <div style="min-width:0;flex:1;">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:3px;">
+            <span style="font-weight:600;font-size:13px;color:var(--text);">${esc(c.name)}</span>
+            <span style="font-family:DM Mono,monospace;font-size:9px;color:var(--text-dim);">${esc(String(c.set||'—'))}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <span style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:var(--gold);">${fmtCHF(lp)}</span>
+            ${cmChf?`<span style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:var(--text);">→ CHF ${cmChf.toFixed(2)}</span>${diffStr}`:''}
+            <span style="font-family:DM Mono,monospace;font-size:9px;color:var(--purple);">${c.mentions}m</span>
+          </div>
+          <div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text-dimmer);margin-top:4px;">${bz.reasons.join(' · ')}</div>
+        </div>
+        <div style="flex-shrink:0;">${bz.score>=2?strongBadge:buyBadge}</div>
+      </div>`;
+    });
+  } else {
+    html+='<div class="dash-empty" style="padding:10px 0;">None yet</div>';
+  }
+  html+='</div>';
+
+  // ── SEALED ──
+  html+='<div>';
+  html+='<div style="font-family:DM Mono,monospace;font-size:9px;color:var(--purple);text-transform:uppercase;letter-spacing:.15em;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid rgba(183,127,255,0.2);">📦 Sealed — '+sa.length+' alert'+(sa.length!==1?'s':'')+'</div>';
+  if(sa.length){
+    sa.forEach(s=>{
+      const ph=s.priceHistory||[];
+      const trend=ph.length>=2?((ph[ph.length-1].price-ph[0].price)/ph[0].price*100):null;
+      const bz=buyZoneBadgeSealed(s);
+      html+=`<div style="padding:10px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+        <div style="min-width:0;flex:1;">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:3px;">
+            <span style="font-weight:600;font-size:13px;color:var(--text);">${esc(s.name)}</span>
+            <span style="font-family:DM Mono,monospace;font-size:9px;color:var(--text-dim);">${STYPES[s.type]||s.type||'—'}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            ${s.lastPrice?`<span style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:var(--gold);">${fmtCHF(s.lastPrice)}</span>`:''}
+            ${trend!==null?`<span style="font-family:DM Mono,monospace;font-size:9px;color:${trend<0?'var(--green)':'var(--red)'};">${trend>=0?'▲':'▼'}${Math.abs(trend).toFixed(1)}%</span>`:''}
+            <span style="font-family:DM Mono,monospace;font-size:9px;color:var(--purple);">${s.mentions} mentions</span>
+          </div>
+          ${s.set&&s.set!=='—'?`<div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text-dimmer);margin-top:4px;">${esc(s.set)}</div>`:''}
+        </div>
+        <div style="flex-shrink:0;">${s.mentions>=3?strongBadge:buyBadge}</div>
+      </div>`;
+    });
+  } else {
+    html+='<div class="dash-empty" style="padding:10px 0;">None yet</div>';
+  }
+  html+='</div>';
+
+  html+='</div>';
   el.innerHTML=html;
 }
 
@@ -3681,7 +3953,7 @@ function toast(msg,type='info',duration=2500){
 }
 
 // ── BUY ZONE NOTIFICATIONS ────────────────────────────────────────────────────
-const _notifiedIds = new Set();
+var _notifiedIds = new Set();
 function checkBuyZoneNotifications(){
   const newAlerts=[];
   cards.forEach(c=>{
@@ -3747,21 +4019,6 @@ function renderSealedSignalChart(){
   });
 }
 
-function renderBuyZoneAlerts(){
-  const el=document.getElementById('buyzoneAlerts'); if(!el) return;
-  const ca=cards.filter(c=>buyZone(c).score>0).sort((a,b)=>buyZone(b).score-buyZone(a).score).slice(0,5);
-  const sa=sealed.filter(s=>s.mentions>=2).slice(0,5);
-  if(!ca.length&&!sa.length){el.innerHTML='<div style="font-family:DM Mono,monospace;font-size:11px;color:var(--text-dimmer);padding:8px 0">No buy zone alerts yet — log more prices and mentions</div>';return;}
-  let html='<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">';
-  html+='<div><div style="font-family:DM Mono,monospace;font-size:10px;color:var(--purple);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">Cards</div>';
-  ca.forEach(c=>{const bz=buyZone(c);html+=`<div style="padding:8px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;"><div><div style="font-family:DM Mono,monospace;font-size:12px">${esc(c.name)} <span style="color:var(--text-dim);font-size:10px">${esc(c.set)}</span></div><div style="font-size:10px;color:var(--text-dim);margin-top:2px">${bz.reasons.join(' · ')}</div></div><span style="color:#39d98a;font-size:11px;white-space:nowrap">${bz.score>=2?'⭐ STRONG':'💚 BUY'}</span></div>`;});
-  if(!ca.length) html+='<div style="font-family:DM Mono,monospace;font-size:11px;color:var(--text-dimmer)">None yet</div>';
-  html+='</div><div><div style="font-family:DM Mono,monospace;font-size:10px;color:var(--purple);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">Sealed</div>';
-  sa.forEach(s=>{html+=`<div style="padding:8px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;"><div><div style="font-family:DM Mono,monospace;font-size:12px">${esc(s.name)}</div><div style="font-size:10px;color:var(--text-dim);margin-top:2px">${esc(STYPES[s.type]||s.type)} · ${s.mentions} mentions</div></div><span style="color:#39d98a;font-size:11px">💚 BUY</span></div>`;});
-  if(!sa.length) html+='<div style="font-family:DM Mono,monospace;font-size:11px;color:var(--text-dimmer)">None yet</div>';
-  html+='</div></div>';
-  el.innerHTML=html;
-}
 </script>
 
 <!-- COLLECTION EDIT MODAL -->
