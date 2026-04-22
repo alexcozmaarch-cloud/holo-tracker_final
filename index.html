@@ -1405,8 +1405,8 @@ async function scheduleCMBgFetch(forceAll){
           console.log('  raw pricing:', JSON.stringify(detail.pricing||detail.cardmarket||'none'));
         }
       }catch(e){
-        // Mark as attempted so we don't retry immediately
-        _cmPrices[c.id] = {price:null, fetchedAt:now};
+        // Mark as attempted with this week's key — won't retry until next Monday
+        _cmPrices[c.id] = {price:null, fetchedAt:now, week:currentWeekKey()};
         failed++;
         console.log('[fail]',c.name,c.set,'→',e.message);
       }
@@ -1425,8 +1425,10 @@ async function scheduleCMBgFetch(forceAll){
 
   const msg = fetched
     ? `✅ ${fetched} prices fetched${noPrice?' · '+noPrice+' no CM data':''}${failed?' · '+failed+' errors':''}`
-    : `⚠ No prices found — ${noPrice} cards have no CM data on TCGdex${failed?' · '+failed+' errors':''}`;
-  _updatePriceStatus(fetched ? `${fetched}/${toFetch.length} prices` : `0 prices · ${failed+noPrice} skipped`);
+    : `⚠ No new prices — ${noPrice} cards not on CM${failed?' · '+failed+' errors':''}`;
+  const weekStr = currentWeekKey();
+  const priceCount = Object.values(_cmPrices).filter(p=>p&&p.price>0).length;
+  _updatePriceStatus(`${priceCount} prices · ${weekStr} · next refresh: Monday`);
   toast(msg, fetched?'success':'error', 6000);
 }
 
@@ -1437,9 +1439,15 @@ function _updatePriceStatus(msg){
 
 // Manual refresh — clear stale marks and re-fetch everything
 function refreshPrices(){
-  // Reset fetchedAt so everything re-fetches
-  Object.keys(_cmPrices).forEach(k=>{ _cmPrices[k].fetchedAt = 0; });
-  scheduleCMBgFetch(true);
+  // Only force-refresh cards that already have a price — don't hammer no-price promos
+  Object.keys(_cmPrices).forEach(k=>{
+    if(_cmPrices[k]?.price > 0){
+      _cmPrices[k].fetchedAt = 0;
+      _cmPrices[k].week = '';
+    }
+  });
+  scheduleCMBgFetch(false);
+  toast('Refreshing prices for cards with existing data…','info',3000);
 }
 
 // ── 5. Sets list loader ───────────────────────────────────────────
@@ -1501,15 +1509,23 @@ function applyCMPrices(priceRows){
   if(!Array.isArray(priceRows)) return;
   priceRows.forEach(r=>{
     const cardId = r[0]; if(!cardId) return;
+    // Only update if sheet has newer/better data than local cache
+    const existing = _cmPrices[cardId];
+    const sheetFetchedAt = parseInt(r[8])||0;
+    if(existing && existing.fetchedAt > sheetFetchedAt && existing.price > 0){
+      // Local cache is newer and has a price — keep it
+      return;
+    }
     _cmPrices[cardId] = {
-      tcgdexId:r[1]||null, week:r[2]||'',
-      price:   parseFloat(r[3])||null,
-      trend:   parseFloat(r[4])||null,
-      avg7:    parseFloat(r[5])||null,
-      avg30:   parseFloat(r[6])||null,
-      low:     parseFloat(r[7])||null,
-      fetchedAt:parseInt(r[8])||0,
-      eurRate: parseFloat(r[9])||null
+      tcgdexId:  r[1]||null,
+      week:      r[2]||'',
+      price:     parseFloat(r[3])||null,
+      trend:     parseFloat(r[4])||null,
+      avg7:      parseFloat(r[5])||null,
+      avg30:     parseFloat(r[6])||null,
+      low:       parseFloat(r[7])||null,
+      fetchedAt: sheetFetchedAt,
+      eurRate:   parseFloat(r[9])||null
     };
   });
   // Apply to cards — only when price is valid
