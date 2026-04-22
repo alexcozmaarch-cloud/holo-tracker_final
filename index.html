@@ -2385,7 +2385,13 @@ function render(){
         ${c.notes?`<div class="card-note-preview">📝 ${esc(c.notes)}</div>`:''}
       </td>
       <td>${tagHtml(c.game)}</td>
-      <td style="white-space:nowrap;">${setIdBadgeHtml(c.set)}<div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text-dim);margin-top:3px;">${esc((_setsData.find(s=>s.id===_setIdFrom(c.set))||{}).name||'')}</div></td>
+      <td style="white-space:nowrap;">${(()=>{
+        const {localId} = parseSetField(c.set||'');
+        const setName = (_setsData.find(s=>s.id===_setIdFrom(c.set))||{}).name||'';
+        return setIdBadgeHtml(c.set)
+          + (localId ? `<span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text-dimmer);margin-left:5px;">${esc(localId)}</span>` : '')
+          + (setName ? `<div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text-dim);margin-top:3px;white-space:normal;">${esc(setName)}</div>` : '');
+      })()}</td>
       <td>
         <span class="price-val">${fmtCHF(lp)}</span>
         ${c.target?`<span style="font-family:DM Mono,monospace;font-size:9px;margin-left:6px;color:${lp<=c.target?'var(--green)':'var(--text-dimmer)'}">🎯${fmtCHF(c.target)}</span>`:''}
