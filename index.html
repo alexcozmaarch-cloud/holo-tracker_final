@@ -886,11 +886,9 @@ hr.div{border:none;border-top:1px solid var(--border);margin:36px 0;}
     <div class="desk-table">
       <table class="cards-table" style="table-layout:fixed;">
         <thead><tr>
-          <th style="width:38%;">Set Name</th>
-          <th style="width:18%;">TCGdex ID</th>
-          <th style="width:10%;text-align:center;">Cards</th>
-          <th style="width:14%;text-align:center;">Release</th>
-          <th style="width:20%;text-align:center;">Series</th>
+          <th style="width:55%;">Set · ID</th>
+          <th style="width:15%;text-align:center;">Cards</th>
+          <th style="width:30%;text-align:center;">Release · Series</th>
         </tr></thead>
         <tbody id="sets-tbody"></tbody>
       </table>
@@ -3548,11 +3546,17 @@ function renderSetsTab(){
     const series = s.series || deriveSeries(s.id);
     const seriesColor = {sv:'#b77fff',swsh:'#4d9fff',sm:'#f5c842',xy:'#39d98a',bw:'#ff6b35',dp:'#7a7a9a',ex:'#7a7a9a',base:'#7a7a9a'}[series?.toLowerCase()]||'#7a7a9a';
     return `<tr class="card-row set-row" data-id="${esc(s.id)}" onclick="copySetId('${esc(s.id)}')" style="cursor:pointer;" title="Click to copy ID: ${esc(s.id)}">
-      <td><div class="card-name">${esc(s.name)}</div></td>
-      <td><span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--purple);background:rgba(183,127,255,0.12);padding:2px 8px;border-radius:2px;">${esc(s.id)}</span></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
+          <span style="font-family:'DM Mono',monospace;font-size:10px;color:${seriesColor};background:${seriesColor}18;padding:1px 6px;border-radius:2px;text-transform:uppercase;white-space:nowrap;">${esc(series)}</span>
+          <span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--purple);font-weight:600;">${esc(s.id)}</span>
+        </div>
+        <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-dim);white-space:normal;line-height:1.3;">${esc(s.name)}</div>
+      </td>
       <td style="text-align:center;font-family:'DM Mono',monospace;font-size:11px;color:var(--text-dim);">${s.total||'—'}</td>
-      <td style="text-align:center;font-family:'DM Mono',monospace;font-size:11px;color:var(--text-dim);">${year}</td>
-      <td style="text-align:center;"><span style="font-family:'DM Mono',monospace;font-size:10px;color:${seriesColor};background:${seriesColor}18;padding:2px 8px;border-radius:2px;text-transform:uppercase;">${esc(series)}</span></td>
+      <td style="text-align:center;">
+        <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-dim);">${year}</div>
+      </td>
     </tr>`;
   }).join('');
 }
