@@ -3836,6 +3836,7 @@ function connectSheets() {
     return;
   }
   state.sheetsUrl = url;
+  try { localStorage.setItem('holoTrackerSheetsUrl', url); } catch(e) {}
   updateSheetsStatus(true);
   closeModal('sheetsModal');
   showToast('Connected to Google Sheets!', 'success');
@@ -4419,6 +4420,19 @@ document.addEventListener('keydown', e => {
 //   INIT
 // =========================================
 function init() {
+  // Restore saved Sheets URL — stays connected across refreshes
+  try {
+    const saved = localStorage.getItem('holoTrackerSheetsUrl');
+    if (saved) {
+      state.sheetsUrl = saved;
+      updateSheetsStatus(true);
+      // Pre-fill the input so user can see the saved URL
+      const input = document.getElementById('sheetsUrlInput');
+      if (input) input.value = saved;
+      // Auto-sync on load
+      syncData();
+    }
+  } catch(e) {}
   renderTracker();
   renderSealed();
   renderCollection();
