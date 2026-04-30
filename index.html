@@ -2547,9 +2547,9 @@ async function loadSheet(){
     toast('Sync error: '+err.message+' — repaste script in Apps Script and redeploy as new version','error');
     console.error('Sync raw response:',rawText);
     try{ cards = normaliseCards(JSON.parse(localStorage.getItem(KEY_CACHE)||'[]')); }catch{ cards=[]; }
-    try{ sealed     = JSON.parse(localStorage.getItem(KEY_SCACHE)||'[]'); }catch{}
+    try{ sealed     = normaliseSealed(JSON.parse(localStorage.getItem(KEY_SCACHE)||'[]')); }catch{}
     try{ collection = JSON.parse(localStorage.getItem(KEY_COLL)  ||'[]'); }catch{}
-    render();
+    render(); if(typeof renderSealed==='function') renderSealed();
   }
 }
 
@@ -2617,14 +2617,11 @@ function deriveSeries(id){
 function wireSetAutocomplete(inputId, afterSelect){
   const inp = document.getElementById(inputId); if(!inp) return;
 
-  // Remove any existing dropdown and listeners (re-wire safe)
   const existing = document.getElementById(inputId+'-set-ac');
   if(existing) existing.remove();
-  const newInp = inp.cloneNode(true); // clone strips old listeners
-  inp.parentNode.replaceChild(newInp, inp);
-  const freshInp = document.getElementById(inputId);
 
-  const wrapper = freshInp.parentElement;
+  const wrapper = inp.parentElement;
+  if(!wrapper) return;
   wrapper.style.position = 'relative';
 
   const dd = document.createElement('div');
@@ -2632,49 +2629,57 @@ function wireSetAutocomplete(inputId, afterSelect){
   dd.style.cssText = 'display:none;position:absolute;top:100%;left:0;right:0;background:var(--card-bg);border:1px solid var(--border-bright);border-radius:0 0 3px 3px;z-index:200;max-height:220px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,0.6);';
   wrapper.appendChild(dd);
 
-  freshInp.addEventListener('input', ()=>{
-    const q = freshInp.value.trim().toLowerCase();
-    if(q.length < 1){ dd.style.display='none'; return; }
-    if(!_setsData.length){ dd.style.display='none'; return; }
+  const renderMatches = ()=>{
+    const q = inp.value.trim().toLowerCase();
+    if(q.length < 1 || !_setsData.length){ dd.style.display='none'; return; }
 
     const matches = _setsData.filter(s=>
-      s.name.toLowerCase().includes(q) ||
-      s.id.toLowerCase().includes(q)
-    ).slice(0,8);
+      String(s.name||'').toLowerCase().includes(q) ||
+      String(s.id||'').toLowerCase().includes(q) ||
+      String(s.series||'').toLowerCase().includes(q)
+    ).slice(0,10);
 
     if(!matches.length){ dd.style.display='none'; return; }
 
     dd.innerHTML = matches.map(s=>{
-      const escaped = q.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
-      const hl = s.name.replace(new RegExp('('+escaped+')','gi'),'<b style="color:var(--gold)">$1</b>');
-      return `<div class="set-ac-item" data-id="${s.id}" data-name="${esc(s.name)}"
-        style="padding:9px 12px;font-family:DM Mono,monospace;font-size:11px;cursor:pointer;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
-        <span style="color:var(--text);">${hl}</span>
-        <span style="color:var(--text-dimmer);font-size:10px;flex-shrink:0;margin-left:12px;">${s.id} · ${s.total} cards</span>
+      let hlName = esc(s.name || '');
+      let hlId = esc(s.id || '');
+      try{
+        const escaped = q.replace(/[-[\]{}()*+?.,\^$|#\s]/g, '\$&');
+        const re = new RegExp('(' + escaped + ')','gi');
+        hlName = hlName.replace(re,'<b style="color:var(--gold)">$1</b>');
+        hlId = hlId.replace(re,'<b style="color:var(--purple)">$1</b>');
+      }catch{}
+      return `<div class="set-ac-item" data-id="${esc(s.id)}" data-name="${esc(s.name)}"
+        style="padding:9px 12px;font-family:DM Mono,monospace;font-size:11px;cursor:pointer;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px;">
+        <span style="color:var(--text);min-width:0;">${hlName}</span>
+        <span style="color:var(--text-dimmer);font-size:10px;flex-shrink:0;white-space:nowrap;">${hlId}${s.total ? ' · ' + s.total + ' cards' : ''}</span>
       </div>`;
     }).join('');
 
     dd.querySelectorAll('.set-ac-item').forEach(item=>{
       item.addEventListener('mousedown', e=>{
         e.preventDefault();
-        const setId   = item.getAttribute('data-id');
-        const setName = item.getAttribute('data-name');
-        // Fill input with "setId" format — this is what the tracker uses
-        freshInp.value = setId;
+        const setId = item.getAttribute('data-id') || '';
+        const setName = item.getAttribute('data-name') || '';
+        inp.value = setId;
         dd.style.display = 'none';
         if(afterSelect) afterSelect(setId, setName);
-        freshInp.dispatchEvent(new Event('input',{bubbles:true}));
+        inp.dispatchEvent(new Event('input',{bubbles:true}));
+        inp.dispatchEvent(new Event('change',{bubbles:true}));
       });
-      item.addEventListener('mouseover',  ()=>item.style.background='rgba(183,127,255,0.1)');
-      item.addEventListener('mouseout',   ()=>item.style.background='');
+      item.addEventListener('mouseover', ()=>item.style.background='rgba(183,127,255,0.1)');
+      item.addEventListener('mouseout', ()=>item.style.background='');
     });
+
     dd.style.display = 'block';
-  });
+  };
 
+  inp.addEventListener('input', renderMatches);
+  inp.addEventListener('focus', renderMatches);
   inp.addEventListener('keydown', e=>{
-    if(e.key==='Escape') dd.style.display='none';
+    if(e.key === 'Escape') dd.style.display='none';
   });
-
   inp.addEventListener('blur', ()=>setTimeout(()=>{ dd.style.display='none'; }, 150));
 }
 
@@ -3196,14 +3201,51 @@ function normaliseCards(arr){
 }
 
 function normaliseSealed(arr){
-  return (arr||[]).filter(Boolean).map(s=>{
-    if(typeof s.priceHistory==='string'){ try{s.priceHistory=JSON.parse(s.priceHistory);}catch{s.priceHistory=[];} }
-    if(!Array.isArray(s.priceHistory)) s.priceHistory=[];
-    s.mentions  = parseInt(s.mentions)||0;
-    s.lastPrice = s.lastPrice!=null ? parseFloat(s.lastPrice)||null : null;
-    if(!s.id) s.id = String(Date.now()+Math.random());
+  return (arr||[]).filter(Boolean).map((row, idx)=>{
+    let s = row;
+
+    if(Array.isArray(row)){
+      s = {
+        id: row[0],
+        name: row[1],
+        game: row[2],
+        type: row[3],
+        set: row[4],
+        notes: row[5],
+        firstSeen: row[6],
+        lastSeen: row[7],
+        mentions: row[8],
+        lastPrice: row[9],
+        priceHistory: row[10]
+      };
+    } else {
+      s = Object.assign({}, row);
+    }
+
+    if(!s.name && s.productName) s.name = s.productName;
+    if(!s.name && s.title) s.name = s.title;
+    if(!s.set && s.setId) s.set = s.setId;
+    if(!s.set && s.edition) s.set = s.edition;
+    if((s.lastPrice == null || s.lastPrice === '') && s.priceSeen != null) s.lastPrice = s.priceSeen;
+    if((s.lastPrice == null || s.lastPrice === '') && s.price != null) s.lastPrice = s.price;
+    if(!s.firstSeen && s.dateAdded) s.firstSeen = s.dateAdded;
+    if(!s.lastSeen && s.updatedAt) s.lastSeen = s.updatedAt;
+
+    if(typeof s.priceHistory === 'string'){
+      try{ s.priceHistory = JSON.parse(s.priceHistory); }catch{ s.priceHistory = []; }
+    }
+    if(!Array.isArray(s.priceHistory)) s.priceHistory = [];
+
+    s.mentions = parseInt(s.mentions)||0;
+    s.lastPrice = s.lastPrice!=null && s.lastPrice!=='' ? (parseFloat(s.lastPrice)||null) : null;
+    s.game = String(s.game || 'pokemon').toLowerCase();
+    s.type = String(s.type || 'special');
+    s.set = String(s.set || '—');
+    s.notes = String(s.notes || '');
+    s.name = String(s.name || '').trim();
+    if(!s.id) s.id = String(Date.now()+idx+Math.random());
     return s;
-  });
+  }).filter(s => s.name);
 }
 
 function lastP(c){ const h=c.priceHistory||[]; return h[h.length-1]?.price||0; }
