@@ -1784,45 +1784,102 @@ function parseSetField(raw){
 // ── Parse Cardmarket pricing from TCGdex card detail ────────────────
 // TCGdex format: detail.pricing.cardmarket.avg / avg-holo / trend / avg7 / avg30 / low
 function _parseCMPricing(detail, variation){
+  const toNum = v => {
+    const n = Number(v);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  };
+
+  const pick = (...vals) => {
+    for(const v of vals){
+      const n = toNum(v);
+      if(n != null) return n;
+    }
+    return null;
+  };
+
+  const isPromo = variation === 'promo';
+
   // Path 1: detail.pricing.cardmarket  (TCGdex v2 modern format)
   const nc = detail?.pricing?.cardmarket;
   if(nc && typeof nc === 'object'){
-    // Use || not ?? — zero prices are invalid, fall through to next candidate
-    // For promos: avg is the real listing; avg-holo may be 0 or missing
-    const isPromo = variation === 'promo' || !variation;
-    let price;
-    if(isPromo){
-      // Promos: prefer avg (regular listing), fall back to avg-holo, then trend
-      price = nc.avg || nc['avg-holo'] || nc.trend || nc.trendPrice || null;
-    } else {
-      price = nc['avg-holo'] || nc.avg || nc.trend || nc.trendPrice || null;
-    }
-    if(price > 0) return {
+    const price = isPromo
+      ? pick(nc.avg, nc['avg-holo'], nc.trend, nc.trendPrice, nc.low)
+      : pick(
+          nc.avg,
+          nc['avg-holo'],
+          nc.trend,
+          nc['trend-holo'],
+          nc.trendPrice,
+          nc.avg7,
+          nc['avg7-holo'],
+          nc.avg30,
+          nc['avg30-holo'],
+          nc.low,
+          nc['low-holo']
+        );
+    if(price != null) return {
       price,
-      trend: nc['trend-holo'] || nc.trend || null,
-      avg7:  nc['avg7-holo']  || nc.avg7  || null,
-      avg30: nc['avg30-holo'] || nc.avg30  || null,
-      low:   nc['low-holo']   || nc.low    || null,
+      trend: pick(nc.trend, nc['trend-holo'], nc.trendPrice),
+      avg7:  pick(nc.avg7, nc['avg7-holo']),
+      avg30: pick(nc.avg30, nc['avg30-holo']),
+      low:   pick(nc.low, nc['low-holo']),
     };
   }
+
   // Path 2: detail.cardmarket  (TCGdex legacy / some sets)
   const lc = detail?.cardmarket;
   if(lc && typeof lc === 'object'){
     const p = lc.prices ?? lc;
-    const price = p.averageSellPrice || p.avg1 || p.avg || p.trendPrice || null;
-    if(price > 0) return {
+    const price = pick(
+      p.averageSellPrice,
+      p.avg1,
+      p.avg,
+      p.trendPrice,
+      p.suggestedPrice,
+      p.lowPrice,
+      p.low
+    );
+    if(price != null) return {
       price,
-      trend: p.trendPrice || p.trend || null,
-      avg7:  p.avg7 || null, avg30: p.avg30 || null,
-      low:   p.lowPrice || p.low || null,
+      trend: pick(p.trendPrice, p.avg1, p.avg),
+      avg7:  pick(p.avg7, p.avg),
+      avg30: pick(p.avg30, p.avg),
+      low:   pick(p.lowPrice, p.low),
     };
   }
-  // Path 3: flat avg on detail root (some older TCGdex responses)
-  if(detail?.avg > 0) return {
-    price: detail.avg, trend: detail.trend || null,
-    avg7: detail.avg7 || null, avg30: detail.avg30 || null, low: detail.low || null,
-  };
-  return {price:null,trend:null,avg7:null,avg30:null,low:null};
+
+  // Path 3: nested variant pricing occasionally used in API responses
+  const variants = detail?.variants || detail?.variant || null;
+  if(variants && typeof variants === 'object'){
+    const entries = Array.isArray(variants) ? variants : Object.values(variants);
+    for(const entry of entries){
+      const cm = entry?.pricing?.cardmarket || entry?.cardmarket?.prices || entry?.cardmarket;
+      if(!cm || typeof cm !== 'object') continue;
+      const price = pick(
+        cm.avg,
+        cm['avg-holo'],
+        cm.trend,
+        cm['trend-holo'],
+        cm.trendPrice,
+        cm.averageSellPrice,
+        cm.avg1,
+        cm.low,
+        cm.lowPrice
+      );
+      if(price != null) return {
+        price,
+        trend: pick(cm.trend, cm['trend-holo'], cm.trendPrice, cm.avg1),
+        avg7:  pick(cm.avg7, cm['avg7-holo']),
+        avg30: pick(cm.avg30, cm['avg30-holo']),
+        low:   pick(cm.low, cm.lowPrice, cm['low-holo']),
+      };
+    }
+  }
+
+  // Path 4: flat avg on detail root (some older TCGdex responses)
+  const rootPrice = pick(detail?.avg, detail?.price, detail?.trend, detail?.trendPrice);
+  if(rootPrice != null) return { price: rootPrice, trend:null, avg7:null, avg30:null, low:null };
+  return null;
 }
 
 // ── Fetch one card from TCGdex, return {detail, cm} ─────────────────
@@ -2169,7 +2226,7 @@ async function loadSetsData(){
     localStorage.setItem(SETS_CACHE_KEY, JSON.stringify({ts:Date.now(), sets:_setsData}));
     console.log('[sets] loaded', _setsData.length, '— sample:', _setsData.slice(0,3).map(s=>s.id).join(', '));
     if(status()) status().textContent = _setsData.length + ' sets';
-    if(document.getElementById('tab-sets')?.classList.contains('active')) renderSetsTab();
+    try{ renderSetsTab(); }catch{}
     wireAllSetAutocompletes();
   }catch(e){
     console.error('[sets] failed:', e.message);
@@ -2332,12 +2389,12 @@ function applyCMPrices(priceRows){
   if(scriptUrl){
     document.getElementById('url-input').value = scriptUrl;
     document.getElementById('setup-banner').style.display = 'none';
-    loadSheet().then(()=>{ scheduleCMBgFetch(); loadSnapshotStatus(); }); // fetch after data loaded
+    loadSheet().then(()=>{ render(); if(typeof renderSealed==='function') renderSealed(); if(typeof renderCollection==='function') renderCollection(); if(typeof renderDashboard==='function') renderDashboard(); scheduleCMBgFetch(); loadSnapshotStatus(); }); // fetch after data loaded
   } else {
     scheduleCMBgFetch();
   }
   // Load sets list for autocomplete (async, non-blocking)
-  loadSetsData().then(()=>wireAllSetAutocompletes());
+  loadSetsData().then(()=>{ wireAllSetAutocompletes(); try{ renderSetsTab(); }catch{} });
 
   document.addEventListener('keydown', e=>{
     if(e.key!=='Enter' || document.activeElement.tagName==='TEXTAREA') return;
