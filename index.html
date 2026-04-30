@@ -2006,7 +2006,7 @@ function respond(d) {
   </aside>
 
   <!-- Mobile nav overlay (tap to close) -->
-  <div id="mobileNavOverlay" onclick="toggleMobileNav()" style="display:none"></div>
+  <div id="mobileNavOverlay" onclick="toggleMobileNav()"></div>
 
   <!-- MAIN AREA -->
   <main class="main-area">
@@ -2731,10 +2731,7 @@ function toggleSidebar() {
 }
 
 function toggleMobileNav() {
-  const app = document.getElementById('app');
-  const overlay = document.getElementById('mobileNavOverlay');
-  const isOpen = app.classList.toggle('mobile-nav-open');
-  overlay.style.display = isOpen ? 'block' : 'none';
+  document.getElementById('app').classList.toggle('mobile-nav-open');
 }
 
 // ── Mobile: form-card collapsible toggle ──
@@ -4609,6 +4606,7 @@ document.addEventListener('keydown', e => {
 //   INIT
 // =========================================
 function init() {
+  // Restore saved Sheets URL and auto-sync (GitHub Pages version)
   try {
     const savedUrl = localStorage.getItem('holoTrackerSheetsUrl');
     if (savedUrl) {
