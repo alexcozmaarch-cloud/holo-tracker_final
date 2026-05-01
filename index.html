@@ -917,7 +917,7 @@ hr.div { border:none; border-top:1px solid var(--border); margin:36px 0; }
       </div>
     </div>
   
-  <button id="theme-toggle" onclick="(function(){var h=document.documentElement;var t=h.getAttribute('data-theme');h.setAttribute('data-theme',t==='light'?'dark':'light');localStorage.setItem('ht-theme',h.getAttribute('data-theme'));this.textContent=h.getAttribute('data-theme')==='light'?'☀ Light':'☾ Dark';}).call(this)" title="Toggle light/dark mode">☾ Dark</button>
+  <button id="theme-toggle" onclick="(function(){var h=document.documentElement;var t=h.getAttribute('data-theme');var n=t==='light'?'dark':'light';h.setAttribute('data-theme',n);window.__htTheme=n;try{localStorage.setItem('ht-theme',n);}catch(e){}this.textContent=n==='light'?'☀ Light':'☾ Dark';}).call(this)" title="Toggle light/dark mode">☾ Dark</button>
 </header>
 
   <!-- TAB BAR -->
@@ -2164,7 +2164,7 @@ async function scheduleCMBgFetch(forceAll){
     : `⚠ No new prices — ${noPrice} cards not on CM${failed?' · '+failed+' errors':''}`;
   const weekStr = currentWeekKey();
   const priceCount = Object.values(_cmPrices).filter(p=>p&&p.price>0).length;
-  _updatePriceStatus(`${priceCount} prices · ${weekStr} · next refresh: Monday`);
+  _updatePriceStatus(`${priceCount} prices saved · ${weekStr} · fetched:${fetched} no-price:${noPrice} failed:${failed}`);
   toast(msg, fetched?'success':'error', 6000);
 }
 
@@ -2522,7 +2522,7 @@ async function connectSheet(){
     scriptUrl = url;
     localStorage.setItem(KEY_URL, url);
     cards      = normaliseCards(data.cards);
-    sealed     = data.sealed     || [];
+    sealed     = normaliseSealed(data.sealed || []);
     collection = data.collection || [];
     localStorage.setItem(KEY_CACHE,  JSON.stringify(cards));
     localStorage.setItem(KEY_SCACHE, JSON.stringify(sealed));
@@ -2581,7 +2581,7 @@ async function loadSheet(){
     toast('Synced — '+cards.length+' cards · '+sealed.length+' sealed · '+collection.length+' collection','success');
   }catch(err){
     setSyncing('error','Sync failed');
-    toast('Sync error: '+err.message+' — repaste script in Apps Script and redeploy as new version','error');
+    toast('Sync error: '+err.message+' — check Apps Script URL, deployment version, and browser cache','error');
     console.error('Sync raw response:',rawText);
     try{ cards = normaliseCards(JSON.parse(localStorage.getItem(KEY_CACHE)||'[]')); }catch{ cards=[]; }
     try{ sealed     = normaliseSealed(JSON.parse(localStorage.getItem(KEY_SCACHE)||'[]')); }catch{}
@@ -4767,12 +4767,17 @@ async function saveEdit(){
 // ── TAB SWITCHING ─────────────────────────────────────────────────────────────
 function _forceSetsLoad(){
   const status = document.getElementById('sets-status');
-  if(status) status.textContent='Fetching from TCGdex…';
+  if(status) status.textContent='Refreshing sets…';
   localStorage.removeItem(SETS_CACHE_KEY);
   _setsData = [];
+  try{ renderSetsTab(); }catch{}
   loadSetsData().then(()=>{
     renderSetsTab();
     wireAllSetAutocompletes();
+    toast('Sets refreshed from TCGdex','success');
+  }).catch(e=>{
+    if(status) status.textContent='Sets failed to load';
+    toast('Sets load failed: '+e.message,'error',5000);
   });
 }
 
