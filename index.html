@@ -1675,25 +1675,36 @@ function isMonday(){ return new Date().getDay()===1; }
 // Apps Script calls TCGdex server-side — no browser CORS issues.
 // Falls back to direct fetch if no scriptUrl (offline mode).
 async function tcgdexFetch(url){
-  // Route through Apps Script proxy (no CORS). Falls back to direct fetch.
   const T = ms => new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),ms));
+  let lastErr = null;
+
   if(scriptUrl){
     try{
       const r = await Promise.race([
         fetch(scriptUrl,{method:'POST',body:JSON.stringify({action:'tcgdex',url})}),
         T(14000)
       ]);
-      const j = await r.json();
-      if(j.error) throw new Error(j.error);
-      return j.data;
+      const raw = await r.text();
+      const j = JSON.parse(raw || '{}');
+      if(j && !j.error && j.data) return j.data;
+      lastErr = new Error(j?.error || 'proxy returned no data');
+      console.log('[proxy]', lastErr.message, url.slice(0,120));
     }catch(e){
-      console.log('[proxy]',e.message,url.slice(40));
+      lastErr = e;
+      console.log('[proxy]', e.message, url.slice(0,120));
     }
   }
-  // Direct fallback — also reached when no scriptUrl (offline/dev mode)
-  const r = await Promise.race([fetch(url), T(10000)]);
-  if(!r.ok) throw new Error('HTTP '+r.status);
-  return r.json();
+
+  try{
+    const r = await Promise.race([
+      fetch(url, { method:'GET', headers:{'Accept':'application/json'} }),
+      T(12000)
+    ]);
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    return await r.json();
+  }catch(e){
+    throw new Error(lastErr ? (lastErr.message + ' / direct: ' + e.message) : e.message);
+  }
 }
 
 // ── Cardmarket Direct Scrape via Apps Script proxy ──────────────────────────
@@ -2041,7 +2052,7 @@ let _cmFetchRunning = false;
 
 async function scheduleCMBgFetch(forceAll){
   if(_cmFetchRunning) return;
-  if(!cards.length) return;
+  if(!cards.length){ _updatePriceStatus('Price sync idle'); _updatePriceProgress(0,0); return; }
   const now = Date.now();
   const toFetch = cards.filter(c=>{
     if(forceAll) return true;
@@ -2053,8 +2064,9 @@ async function scheduleCMBgFetch(forceAll){
   });
 
   if(!toFetch.length){
-    // All prices fresh — just apply them
     cards.forEach(c=>{ if(_cmPrices[c.id]?.price>0) c.cmLive=_cmPrices[c.id]; });
+    _updatePriceStatus('Price sync idle');
+    _updatePriceProgress(0, 0);
     render();
     return;
   }
@@ -2141,7 +2153,7 @@ async function scheduleCMBgFetch(forceAll){
   }
 
   _cmFetchRunning = false;
-  _updatePriceProgress(-1, toFetch.length); // hide bar
+  _updatePriceProgress(toFetch.length, toFetch.length);
   localStorage.setItem(PRICES_SHEET_KEY, JSON.stringify(_cmPrices));
   if(scriptUrl) saveCMPricesToSheet().catch(()=>{});
   render();
@@ -2167,11 +2179,20 @@ function _updatePriceProgress(done, total){
   const label = document.getElementById('price-progress-label');
   const pct   = document.getElementById('price-progress-pct');
   if(!wrap) return;
-  if(done < 0){ wrap.style.display='none'; return; }          // hide
+
   wrap.style.display = 'block';
   const p = total > 0 ? Math.round((done/total)*100) : 0;
-  if(bar)   bar.style.width   = p + '%';
-  if(pct)   pct.textContent   = p + '%';
+  if(bar) bar.style.width = p + '%';
+  if(pct) pct.textContent = p + '%';
+
+  if(total <= 0){
+    if(label) label.textContent = 'Price sync idle';
+    return;
+  }
+  if(done >= total){
+    if(label) label.textContent = `Price sync complete · ${done} / ${total}`;
+    return;
+  }
   if(label) label.textContent = `Fetching market prices… ${done} / ${total}`;
 }
 
@@ -2195,46 +2216,62 @@ function refreshPrices(){
 
 // ── 5. Sets list loader ───────────────────────────────────────────
 async function loadSetsData(){
-  // Return from cache if fresh
   try{
     const c = JSON.parse(localStorage.getItem(SETS_CACHE_KEY)||'{}');
     if(c.ts && (Date.now()-c.ts) < SETS_CACHE_TTL && c.sets?.length){
       _setsData = c.sets;
       console.log('[sets] from cache:', _setsData.length);
-      return;
+      const status = document.getElementById('sets-status');
+      if(status) status.textContent = _setsData.length + ' sets';
+      return _setsData;
     }
   }catch{}
 
   const status = ()=>document.getElementById('sets-status');
   if(status()) status().textContent = 'Fetching from TCGdex…';
 
-  try{
-    const list = await tcgdexFetch('https://api.tcgdex.net/v2/en/sets');
-    if(!Array.isArray(list)||!list.length) throw new Error('empty response');
+  const urls = [
+    'https://api.tcgdex.net/v2/en/sets',
+    'https://api.tcgdex.net/v2/en/sets?pagination[itemsPerPage]=1000'
+  ];
 
-    _setsData = list
-      .filter(s=>s.id && s.name)
-      .map(s=>({
-        id:    s.id,
-        name:  s.name,
-        releaseDate: s.releaseDate||'',
-        total: s.cardCount?.total || s.cardCount?.official || 0,
-        series: s.serie?.name || s.serie?.id || deriveSeries(s.id)
-      }))
-      .sort((a,b)=>b.releaseDate.localeCompare(a.releaseDate));
-
-    localStorage.setItem(SETS_CACHE_KEY, JSON.stringify({ts:Date.now(), sets:_setsData}));
-    console.log('[sets] loaded', _setsData.length, '— sample:', _setsData.slice(0,3).map(s=>s.id).join(', '));
-    if(status()) status().textContent = _setsData.length + ' sets';
-    try{ renderSetsTab(); }catch{}
-    wireAllSetAutocompletes();
-  }catch(e){
-    console.error('[sets] failed:', e.message);
-    const isCORS = e.message.includes('fetch') || e.message.includes('network') || e.message.includes('CORS');
-    if(status()) status().textContent = isCORS
-      ? 'Network error — try: disable ad blocker / VPN, or use a different browser'
-      : 'Load failed: '+e.message+' — click ↻ Refresh';
+  let list = null;
+  let lastErr = null;
+  for(const url of urls){
+    try{
+      const data = await tcgdexFetch(url);
+      if(Array.isArray(data)) { list = data; break; }
+      if(Array.isArray(data?.items)) { list = data.items; break; }
+      if(Array.isArray(data?.hydra?.member)) { list = data.hydra.member; break; }
+      if(Array.isArray(data?.results)) { list = data.results; break; }
+    }catch(e){
+      lastErr = e;
+      console.log('[sets]', e.message, url);
+    }
   }
+
+  if(!Array.isArray(list) || !list.length){
+    if(status()) status().textContent = 'Sets failed to load';
+    throw new Error(lastErr?.message || 'empty response');
+  }
+
+  _setsData = list
+    .filter(s=>s && s.id && s.name)
+    .map(s=>({
+      id: s.id,
+      name: s.name,
+      releaseDate: s.releaseDate || s.legal?.standard || '',
+      total: s.cardCount?.total || s.cardCount?.official || s.cards?.length || 0,
+      series: s.serie?.name || s.serie?.id || s.series?.name || s.series || deriveSeries(s.id)
+    }))
+    .sort((a,b)=>String(b.releaseDate||'').localeCompare(String(a.releaseDate||'')));
+
+  localStorage.setItem(SETS_CACHE_KEY, JSON.stringify({ts:Date.now(), sets:_setsData}));
+  console.log('[sets] loaded', _setsData.length, '— sample:', _setsData.slice(0,3).map(s=>s.id).join(', '));
+  if(status()) status().textContent = _setsData.length + ' sets';
+  try{ renderSetsTab(); }catch{}
+  wireAllSetAutocompletes();
+  return _setsData;
 }
 
 // Persist CM prices to a "Prices" sheet via Apps Script
