@@ -132,7 +132,7 @@ select#sort{background:var(--bg2);border:1px solid var(--border);border-radius:8
 
 .card-img-wrap{background:var(--bg3);position:relative}
 .card-img-wrap img{width:100%;display:none}
-.img-ph{width:100%;aspect-ratio:3/4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:linear-gradient(160deg,var(--bg3) 60%,var(--border))}
+.img-ph{width:100%;aspect-ratio:5/7;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:linear-gradient(160deg,var(--bg3) 60%,var(--border))}
 .img-ph-icon{font-size:1.8rem;opacity:0.12}
 .img-ph-txt{font-size:0.58rem;font-family:'DM Mono',monospace;color:var(--muted);opacity:0.5;text-transform:uppercase;letter-spacing:0.1em}
 
@@ -212,18 +212,36 @@ select#sort{background:var(--bg2);border:1px solid var(--border);border-radius:8
 .vt-btn.active{background:var(--bg3);color:var(--text)}
 .vt-btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8}
 
-/* grid density variants */
-.grid.density-compact{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
-.grid.density-normal{grid-template-columns:repeat(auto-fill,minmax(195px,1fr));gap:12px}
-.grid.density-wide{grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+/* ── GRID DENSITY ── */
 
-/* compact: hide image */
-.grid.density-compact .card-img-wrap{display:none}
-.grid.density-compact .card-body{padding:10px 12px 12px}
-.grid.density-compact .card-name{font-size:0.78rem}
+/* NORMAL (default): card with image, ~200px min */
+.grid.density-normal{grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
 
-/* wide: show more info */
+/* WIDE: fewer bigger cards, ~320px min */
+.grid.density-wide{grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
+.grid.density-wide .card-img-wrap img,.grid.density-wide .card-img-wrap .img-ph{aspect-ratio:2/3}
 .grid.density-wide .card-body{padding:12px 14px 14px}
+
+/* LIST: single-column rows, no image, all info in one line */
+.grid.density-list{grid-template-columns:1fr;gap:4px}
+.grid.density-list .card{border-radius:8px;border-top-width:0 !important;border-left:3px solid transparent}
+.grid.density-list .card.sig-hot{border-left-color:var(--hot)}
+.grid.density-list .card.sig-warm{border-left-color:var(--warm)}
+.grid.density-list .card.sig-buydip{border-left-color:var(--buydip)}
+.grid.density-list .card.sig-watch{border-left-color:var(--watch)}
+.grid.density-list .card.sig-cold{border-left-color:var(--cold)}
+.grid.density-list .card-img-wrap{display:none}
+.grid.density-list .card-body{display:flex;align-items:center;gap:12px;padding:8px 12px;flex-wrap:nowrap}
+.grid.density-list .card-name{flex:1.8;min-width:0;font-size:0.82rem;margin-bottom:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.grid.density-list .card-set{flex:1;min-width:0;font-size:0.62rem;margin-bottom:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.grid.density-list .card-prices{flex:0 0 auto;flex-direction:column;align-items:flex-end;gap:0;margin-bottom:0;min-width:90px}
+.grid.density-list .card-price-chf{font-size:0.82rem}
+.grid.density-list .card-price-eur{font-size:0.6rem}
+.grid.density-list .card-footer{flex:0 0 auto;gap:8px;margin-bottom:0}
+.grid.density-list .buy-score-wrap{flex:0 0 80px;margin-top:0}
+.grid.density-list .card-note{display:none}
+.grid.density-list .card-mention-btn{top:50%;transform:translateY(-50%);right:6px}
+.grid.density-list .card:hover .card-mention-btn{opacity:1}
 
 /* ── NEW CARD MODAL: buy score input ── */
 .score-input-wrap{display:flex;align-items:center;gap:10px}
@@ -299,14 +317,14 @@ select#sort{background:var(--bg2);border:1px solid var(--border);border-radius:8
     <button class="tab" data-sig="cold" onclick="setTab(this)">Cold</button>
   </div>
   <div class="view-toggle">
-    <button class="vt-btn active" id="vt-compact" title="Compact" onclick="setDensity('compact',this)">
-      <svg viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+    <button class="vt-btn" id="vt-normal" title="Grid" onclick="setDensity('normal',this)">
+      <svg viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="9" rx="1"/><rect x="9" y="1" width="6" height="9" rx="1"/><rect x="1" y="12" width="6" height="3" rx="1"/><rect x="9" y="12" width="6" height="3" rx="1"/></svg>
     </button>
-    <button class="vt-btn" id="vt-normal" title="Normal" onclick="setDensity('normal',this)">
-      <svg viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="9" rx="1"/><rect x="9" y="1" width="6" height="9" rx="1"/><rect x="1" y="12" width="14" height="3" rx="1"/></svg>
+    <button class="vt-btn" id="vt-wide" title="Wide grid" onclick="setDensity('wide',this)">
+      <svg viewBox="0 0 16 16"><rect x="1" y="1" width="14" height="9" rx="1"/><rect x="1" y="12" width="14" height="3" rx="1"/></svg>
     </button>
-    <button class="vt-btn" id="vt-wide" title="Wide" onclick="setDensity('wide',this)">
-      <svg viewBox="0 0 16 16"><rect x="1" y="1" width="14" height="6" rx="1"/><rect x="1" y="9" width="14" height="6" rx="1"/></svg>
+    <button class="vt-btn" id="vt-list" title="List" onclick="setDensity('list',this)">
+      <svg viewBox="0 0 16 16"><rect x="1" y="2" width="14" height="3" rx="1"/><rect x="1" y="7" width="14" height="3" rx="1"/><rect x="1" y="12" width="14" height="3" rx="1"/></svg>
     </button>
   </div>
   <select id="sort" onchange="filterCards()">
@@ -700,14 +718,16 @@ function renderScoreBar(score) {
 }
 
 // ── VIEW DENSITY ──
-var currentDensity = localStorage.getItem('ht_density') || 'compact';
+var currentDensity = localStorage.getItem('ht_density') || 'normal';
 function setDensity(d, btn) {
+  // migrate old 'compact' saved preference to 'normal'
+  if(d === 'compact') d = 'normal';
   currentDensity = d;
   localStorage.setItem('ht_density', d);
   document.getElementById('grid').className = 'grid density-' + d;
   document.querySelectorAll('.vt-btn').forEach(function(b){ b.classList.remove('active'); });
-  if(btn) btn.classList.add('active');
-  else { var b=document.getElementById('vt-'+d); if(b) b.classList.add('active'); }
+  if(btn) { btn.classList.add('active'); }
+  else { var b = document.getElementById('vt-' + d); if(b) b.classList.add('active'); }
 }
 
 // ── ADD NEW CARD ──
@@ -844,10 +864,16 @@ function renderCard(card){
   img.onload=function(){ ph.style.display='none'; img.style.display='block'; };
   imgWrap.appendChild(img);
 
+  // Observe the whole card div (always visible), not imgWrap (hidden in list mode)
   var obs=new IntersectionObserver(function(entries,o){
-    entries.forEach(function(e){ if(e.isIntersecting){ fetchCardImage(card,img); o.unobserve(e.target); }});
-  },{rootMargin:'200px'});
-  obs.observe(imgWrap);
+    entries.forEach(function(e){
+      if(e.isIntersecting){
+        fetchCardImage(card,img);
+        o.unobserve(e.target);
+      }
+    });
+  },{rootMargin:'300px'});
+  obs.observe(div); // div = the card element, always in layout
 
   var em=effectiveMentions(card);
   var score=getBuyScore(card);
