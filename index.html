@@ -594,7 +594,12 @@ function syncQueue(){
     body: JSON.stringify(payload)
   }).then(r=>r.json()).then(d=>{
     if(d.status==='ok'){
-      // Clear deltas only for synced items
+      // Mark synced cards with today's date so dashboard reflects immediately
+      var today = (d.date || new Date().toISOString().split('T')[0]);
+      pendingQueue.forEach(function(m){
+        var card = CARDS.find(function(c){ return c.n===m.name && c.s===m.set; });
+        if(card) card.lm = today;
+      });
       pendingQueue = [];
       mentionDeltas = {};
       localStorage.setItem('ht_pending','[]');
@@ -602,6 +607,9 @@ function syncQueue(){
       updateQueueBar();
       setSyncStatus('ok','Synced');
       toast('Synced to Sheets ✓','success');
+      // Refresh dashboard with real dates
+      var dashActive = document.getElementById('dash-view').classList.contains('active');
+      if(dashActive) renderDashboard();
     } else {
       setSyncStatus('err','Sync failed');
       toast('Sync failed: ' + (d.error||'unknown'),'error');
@@ -1049,21 +1057,40 @@ function showView(view) {
 }
 
 // ── DASHBOARD ENGINE ──
-// Week score: prioritises cards with mention delta THIS session + dip trajectory
-// Month score: pure buy score (mentions + trajectory + signal)
+// Uses card.lm (lastMentioned date "YYYY-MM-DD") from the Sheet.
+// Falls back to session delta if lm not yet synced.
+
+function daysSince(dateStr) {
+  if (!dateStr) return 9999;
+  var d = new Date(dateStr);
+  if (isNaN(d)) return 9999;
+  return Math.floor((Date.now() - d.getTime()) / 86400000);
+}
+
+function mentionedInDays(card, days) {
+  // Real date from Sheet
+  if (card.lm) return daysSince(card.lm) <= days;
+  // Fallback: session delta (pre-sync)
+  return (mentionDeltas[cardKey(card)] || 0) > 0;
+}
+
 function weekScore(card) {
-  var k = cardKey(card);
-  var delta = mentionDeltas[k] || 0;     // mentions added this session = "this week"
-  var base = getBuyScore(card);
-  // Heavy bonus for cards mentioned this session (you heard about them recently)
-  var momentum = delta * 2.5;
-  // Penalise hot/climbing — good for month watch but not immediate entry
-  var penalty = (card.sig === 'hot') ? -1.5 : 0;
-  return Math.min(10, base + momentum + penalty);
+  var base    = getBuyScore(card);
+  var ds      = daysSince(card.lm);
+  // Recency bonus: mentioned in last 7 days = +3, last 14 = +1.5, else 0
+  var recency = ds <= 7 ? 3 : ds <= 14 ? 1.5 : 0;
+  // Session delta bonus for anything not yet synced
+  var delta   = mentionDeltas[cardKey(card)] || 0;
+  var session = delta > 0 && !card.lm ? delta * 2 : 0;
+  var penalty = card.sig === 'hot' ? -1.5 : 0;
+  return Math.min(10, base + recency + session + penalty);
 }
 
 function monthScore(card) {
-  return getBuyScore(card);
+  var base    = getBuyScore(card);
+  var ds      = daysSince(card.lm);
+  var recency = ds <= 30 ? 1.5 : ds <= 60 ? 0.5 : 0;
+  return Math.min(10, base + recency);
 }
 
 var dashImgCache = {};
@@ -1135,7 +1162,12 @@ function makeDashRow(card, rank, scoreVal, showWeekBadge) {
   var info = document.createElement('div');
   info.className = 'dash-info';
   var em = effectiveMentions(card);
-  var weekBadge = (showWeekBadge && k>0) ? '<span class="dash-new-badge">+'+k+' this week</span>' : '';
+  var weekBadge = '';
+  if (showWeekBadge) {
+    var ds2 = daysSince(card.lm);
+    if (ds2 <= 7) weekBadge = '<span class="dash-new-badge">📅 ' + (ds2===0?'today':ds2+'d ago') + '</span>';
+    else if (k > 0) weekBadge = '<span class="dash-new-badge">+'+k+' session</span>';
+  }
   info.innerHTML =
     '<div class="dash-name" title="'+card.n+'">'+card.n+'</div>'+
     '<div class="dash-meta">'+
@@ -1169,19 +1201,33 @@ function renderDashboard() {
   var monthEl = document.getElementById('dash-month');
   weekEl.innerHTML = ''; monthEl.innerHTML = '';
 
-  // Exclude hot/cold from buy lists — not actionable entries
-  var eligible = CARDS.filter(function(c){
-    return c.sig !== 'cold';
-  });
+  // Exclude cold — no actionable entry
+  var eligible = CARDS.filter(function(c){ return c.sig !== 'cold'; });
 
-  // Week: sort by weekScore, take top 10
-  var weekCards = eligible.slice().sort(function(a,b){ return weekScore(b)-weekScore(a); }).slice(0,10);
-  weekCards.forEach(function(c,i){
-    weekEl.appendChild(makeDashRow(c, i+1, weekScore(c), true));
+  // ── THIS WEEK ──
+  // Priority: cards mentioned in last 7 days (real date from Sheet)
+  // OR high session delta (not yet synced). Then sort by weekScore.
+  var weekPool = eligible.filter(function(c){
+    return mentionedInDays(c, 7) || weekScore(c) >= 7;
   });
+  // If fewer than 5 qualify, fill up with top scorers
+  if (weekPool.length < 5) weekPool = eligible.slice();
+  var weekCards = weekPool.slice().sort(function(a,b){ return weekScore(b)-weekScore(a); }).slice(0,10);
+  if (weekCards.length === 0) {
+    weekEl.innerHTML = '<div style="color:var(--muted);font-size:0.8rem;padding:20px 0;font-family:DM Mono,monospace">No cards mentioned in last 7 days yet.<br>Sync your mentions to see real dates.</div>';
+  } else {
+    weekCards.forEach(function(c,i){
+      weekEl.appendChild(makeDashRow(c, i+1, weekScore(c), true));
+    });
+  }
 
-  // Month: sort by monthScore (pure buy score), exclude already-in-week if score identical
-  var monthCards = eligible.slice().sort(function(a,b){ return monthScore(b)-monthScore(a); }).slice(0,10);
+  // ── THIS MONTH ──
+  // Cards mentioned in last 30 days OR top buy score overall
+  var monthPool = eligible.filter(function(c){
+    return mentionedInDays(c, 30) || monthScore(c) >= 6;
+  });
+  if (monthPool.length < 5) monthPool = eligible.slice();
+  var monthCards = monthPool.slice().sort(function(a,b){ return monthScore(b)-monthScore(a); }).slice(0,10);
   monthCards.forEach(function(c,i){
     monthEl.appendChild(makeDashRow(c, i+1, monthScore(c), false));
   });
