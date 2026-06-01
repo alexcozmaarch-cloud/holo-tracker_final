@@ -40,11 +40,56 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 .portfolio-val-label{font-size:0.68rem;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:2px}
 .portfolio-val-num{font-size:1.8rem;font-weight:600;color:var(--gold)}
 
-/* ── STATS ── */
-.stats{display:flex;gap:10px;padding:16px 32px;flex-wrap:wrap}
-.stat{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 16px;min-width:90px}
-.stat-label{font-size:0.62rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:3px}
-.stat-val{font-size:1.25rem;font-weight:600}
+/* ── STATS PILLS ── */
+.stats{display:flex;gap:8px;padding:12px 32px 0;flex-wrap:wrap}
+.stat{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 14px;display:flex;align-items:baseline;gap:8px}
+.stat-label{font-size:0.62rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);font-family:'DM Mono',monospace}
+.stat-val{font-size:1rem;font-weight:600}
+
+/* ── MAIN NAV TABS ── */
+.main-nav{display:flex;gap:0;padding:16px 32px 0;border-bottom:1px solid var(--border);margin-bottom:0}
+.main-tab{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:0.1em;padding:8px 20px 12px;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;transition:color 0.15s,border-color 0.15s;background:none;border-top:none;border-left:none;border-right:none;text-transform:uppercase}
+.main-tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+.main-tab:hover:not(.active){color:var(--text)}
+
+/* ── DASHBOARD ── */
+#dash-view{padding:20px 32px 48px;display:none}
+#dash-view.active{display:block}
+.dash-cols{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.dash-col-title{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:0.1em;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.dash-col-title span{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.1em;color:var(--muted);font-weight:400;text-transform:uppercase}
+
+/* dashboard row */
+.dash-row{display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;cursor:pointer;transition:border-color 0.12s,transform 0.1s}
+.dash-row:hover{border-color:#3a3d52;transform:translateX(2px)}
+.dash-rank{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--border);min-width:28px;text-align:center;line-height:1}
+.dash-rank.r1{color:var(--gold)}
+.dash-rank.r2{color:#9ca3b0}
+.dash-rank.r3{color:#8b6c3e}
+.dash-img{width:44px;min-width:44px;height:62px;border-radius:5px;overflow:hidden;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:0.55rem;font-family:'DM Mono',monospace;color:var(--muted);text-align:center;line-height:1.2}
+.dash-img img{width:100%;height:100%;object-fit:cover;display:none}
+.dash-info{flex:1;min-width:0}
+.dash-name{font-size:0.85rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
+.dash-meta{font-size:0.62rem;font-family:'DM Mono',monospace;color:var(--muted);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.dash-price{font-size:0.9rem;font-weight:600;text-align:right;white-space:nowrap;min-width:60px}
+.dash-score-col{min-width:70px;text-align:right}
+.dash-score-num{font-size:1.1rem;font-weight:600;font-family:'DM Mono',monospace}
+.dash-score-bar-wrap{height:3px;background:var(--border);border-radius:2px;margin-top:3px}
+.dash-score-bar-fill{height:100%;border-radius:2px}
+.dash-sig{font-size:0.58rem;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.08em;padding:1px 5px;border-radius:3px}
+
+/* week badge — cards that got mentions THIS session */
+.dash-new-badge{font-size:0.55rem;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.08em;padding:1px 5px;border-radius:3px;background:rgba(57,200,138,0.15);color:var(--buydip)}
+
+/* cards view wrapper */
+#cards-view{display:none}
+#cards-view.active{display:block}
+
+@media(max-width:700px){
+  .dash-cols{grid-template-columns:1fr}
+  .main-nav{padding:12px 16px 0}
+  #dash-view{padding:16px 16px 48px}
+}
 
 /* ── QUICK ADD ── */
 .quick-add{padding:0 32px 14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -275,21 +320,40 @@ select#sort{background:var(--bg2);border:1px solid var(--border);border-radius:8
     <div class="logo">HOLO TRACKER</div>
     <div class="header-meta" id="header-meta">349 cards &nbsp;·&nbsp; 29 May 2026</div>
   </div>
-  <div class="portfolio-val">
-    <div class="portfolio-val-label">Portfolio value</div>
-    <div class="portfolio-val-num" id="portfolio-val">CHF 34,112</div>
+</div>
+
+<!-- SIGNAL PILLS -->
+<div class="stats">
+  <div class="stat"><div class="stat-label">Total</div><div class="stat-val" id="st-total">349</div></div>
+  <div class="stat" style="border-color:rgba(224,90,43,0.3)"><div class="stat-label" style="color:var(--hot)">Hot</div><div class="stat-val" id="st-hot" style="color:var(--hot)">61</div></div>
+  <div class="stat" style="border-color:rgba(200,170,60,0.3)"><div class="stat-label" style="color:var(--warm)">Warm</div><div class="stat-val" id="st-warm" style="color:var(--warm)">46</div></div>
+  <div class="stat" style="border-color:rgba(57,200,138,0.4)"><div class="stat-label" style="color:var(--buydip)">Buy Dip</div><div class="stat-val" id="st-buydip" style="color:var(--buydip)">1</div></div>
+  <div class="stat" style="border-color:rgba(77,130,200,0.3)"><div class="stat-label" style="color:var(--watch)">Watch</div><div class="stat-val" id="st-watch" style="color:var(--watch)">231</div></div>
+  <div class="stat"><div class="stat-label">Cold</div><div class="stat-val" id="st-cold">10</div></div>
+</div>
+
+<!-- MAIN NAV -->
+<div class="main-nav">
+  <button class="main-tab active" id="nav-dash" onclick="showView('dash')">Dashboard</button>
+  <button class="main-tab" id="nav-cards" onclick="showView('cards')">Cards</button>
+</div>
+
+<!-- DASHBOARD VIEW -->
+<div id="dash-view" class="active">
+  <div class="dash-cols">
+    <div>
+      <div class="dash-col-title">This Week <span>Top 10 · Best Entry Now</span></div>
+      <div id="dash-week"></div>
+    </div>
+    <div>
+      <div class="dash-col-title">This Month <span>Top 10 · Best Buy Score</span></div>
+      <div id="dash-month"></div>
+    </div>
   </div>
 </div>
 
-<!-- STATS -->
-<div class="stats">
-  <div class="stat"><div class="stat-label">Total</div><div class="stat-val" id="st-total">349</div></div>
-  <div class="stat"><div class="stat-label">Hot</div><div class="stat-val" id="st-hot" style="color:var(--hot)">61</div></div>
-  <div class="stat"><div class="stat-label">Warm</div><div class="stat-val" id="st-warm" style="color:var(--warm)">46</div></div>
-  <div class="stat"><div class="stat-label">Buy Dip</div><div class="stat-val" id="st-buydip" style="color:var(--buydip)">1</div></div>
-  <div class="stat"><div class="stat-label">Watch</div><div class="stat-val" id="st-watch" style="color:var(--watch)">231</div></div>
-  <div class="stat"><div class="stat-label">Cold</div><div class="stat-val" id="st-cold" style="color:var(--cold)">10</div></div>
-</div>
+<!-- CARDS VIEW -->
+<div id="cards-view">
 
 <!-- QUICK ADD MENTION -->
 <div class="quick-add">
@@ -338,6 +402,8 @@ select#sort{background:var(--bg2);border:1px solid var(--border);border-radius:8
 <div class="result-count" id="result-count"></div>
 <div class="grid" id="grid"></div>
 <div class="empty" id="empty" style="display:none">No cards match your filter.</div>
+
+</div><!-- /cards-view -->
 
 <!-- DETAIL MODAL -->
 <div class="modal-bg" id="modal-bg" onclick="closeDModal(event)">
@@ -971,6 +1037,158 @@ document.addEventListener('keydown',function(e){ if(e.key==='Escape'){ closeDMod
 // Apply saved density on load
 setDensity(currentDensity, null);
 
+// ── VIEW SWITCHER ──
+function showView(view) {
+  var dash = document.getElementById('dash-view');
+  var cards = document.getElementById('cards-view');
+  document.getElementById('nav-dash').classList.toggle('active', view==='dash');
+  document.getElementById('nav-cards').classList.toggle('active', view==='cards');
+  dash.classList.toggle('active', view==='dash');
+  cards.classList.toggle('active', view==='cards');
+  if(view==='dash') renderDashboard();
+}
+
+// ── DASHBOARD ENGINE ──
+// Week score: prioritises cards with mention delta THIS session + dip trajectory
+// Month score: pure buy score (mentions + trajectory + signal)
+function weekScore(card) {
+  var k = cardKey(card);
+  var delta = mentionDeltas[k] || 0;     // mentions added this session = "this week"
+  var base = getBuyScore(card);
+  // Heavy bonus for cards mentioned this session (you heard about them recently)
+  var momentum = delta * 2.5;
+  // Penalise hot/climbing — good for month watch but not immediate entry
+  var penalty = (card.sig === 'hot') ? -1.5 : 0;
+  return Math.min(10, base + momentum + penalty);
+}
+
+function monthScore(card) {
+  return getBuyScore(card);
+}
+
+var dashImgCache = {};
+
+function loadDashImg(card, imgEl, phEl) {
+  var k = cardKey(card);
+  if(card.jp) return; // Japanese, skip
+  if(imgCache[k]) { imgEl.src=imgCache[k]; imgEl.style.display='block'; phEl.style.display='none'; return; }
+  var cached = sessionStorage.getItem('img_'+k);
+  if(cached) { imgCache[k]=cached; imgEl.src=cached; imgEl.style.display='block'; phEl.style.display='none'; return; }
+
+  if(!card.si) return;
+  var url = card.tid
+    ? 'https://api.pokemontcg.io/v2/cards/' + card.tid
+    : 'https://api.pokemontcg.io/v2/cards?q=name:"' + encodeURIComponent((card.n||'').replace(/'/g,'')) + '" set.id:' + card.si + '&pageSize=2';
+
+  fetch(url).then(function(r){return r.json();}).then(function(d){
+    var imgUrl = null;
+    if(card.tid){ imgUrl = d&&d.data&&d.data.images&&d.data.images.small; }
+    else {
+      if(d&&d.data&&d.data.length){
+        var target=(card.n||'').toLowerCase();
+        var best=d.data[0];
+        for(var i=0;i<d.data.length;i++){ if((d.data[i].name||'').toLowerCase()===target){best=d.data[i];break;} }
+        imgUrl=best.images&&best.images.small;
+      }
+    }
+    if(imgUrl){
+      imgCache[k]=imgUrl; sessionStorage.setItem('img_'+k,imgUrl);
+      imgEl.src=imgUrl; imgEl.style.display='block'; phEl.style.display='none';
+    }
+  }).catch(function(){});
+}
+
+function makeDashRow(card, rank, scoreVal, showWeekBadge) {
+  var sig = card.sig||'watch';
+  var sigColors = {hot:'var(--hot)',warm:'var(--warm)',buydip:'var(--buydip)',watch:'var(--watch)',cold:'var(--cold)'};
+  var scoreColor = scoreVal>=7?'#39c88a':scoreVal>=4.5?'#c8aa3c':'#e05a2b';
+  var pct = ((scoreVal-1)/9*100).toFixed(0);
+  var rankCls = rank===1?'r1':rank===2?'r2':rank===3?'r3':'';
+  var k = mentionDeltas[cardKey(card)] || 0;
+
+  var row = document.createElement('div');
+  row.className = 'dash-row';
+  row.onclick = function(){ openDModal(card); };
+
+  // Rank
+  var rankEl = document.createElement('div');
+  rankEl.className = 'dash-rank ' + rankCls;
+  rankEl.textContent = rank;
+  row.appendChild(rankEl);
+
+  // Image
+  var imgWrap = document.createElement('div');
+  imgWrap.className = 'dash-img';
+  var phEl = document.createElement('div');
+  phEl.style.cssText = 'font-size:0.5rem;color:var(--muted);text-align:center;padding:4px;line-height:1.3';
+  phEl.textContent = card.jp ? '🇯🇵' : (card.s||'?').toUpperCase().slice(0,6);
+  imgWrap.appendChild(phEl);
+  var imgEl = document.createElement('img');
+  imgEl.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:4px;display:none';
+  imgEl.onload = function(){ imgEl.style.display='block'; phEl.style.display='none'; };
+  imgWrap.appendChild(imgEl);
+  row.appendChild(imgWrap);
+  // Load image async
+  setTimeout(function(){ loadDashImg(card, imgEl, phEl); }, rank * 60);
+
+  // Info
+  var info = document.createElement('div');
+  info.className = 'dash-info';
+  var em = effectiveMentions(card);
+  var weekBadge = (showWeekBadge && k>0) ? '<span class="dash-new-badge">+'+k+' this week</span>' : '';
+  info.innerHTML =
+    '<div class="dash-name" title="'+card.n+'">'+card.n+'</div>'+
+    '<div class="dash-meta">'+
+      '<span class="dash-sig" style="background:'+sigColors[sig]+'22;color:'+sigColors[sig]+'">'+(SIG_LABELS[sig]||sig)+'</span>'+
+      '<span>'+em+'✦</span>'+
+      '<span style="color:var(--muted)">'+(card.tid||card.s)+'</span>'+
+      weekBadge+
+    '</div>';
+  row.appendChild(info);
+
+  // Price
+  var price = document.createElement('div');
+  price.className = 'dash-price';
+  price.style.color = 'var(--text)';
+  price.innerHTML = (card.p||'—')+'<br><span style="font-size:0.6rem;font-weight:400;color:var(--muted)">'+(card.mk||'')+'</span>';
+  row.appendChild(price);
+
+  // Score
+  var scoreCol = document.createElement('div');
+  scoreCol.className = 'dash-score-col';
+  scoreCol.innerHTML =
+    '<div class="dash-score-num" style="color:'+scoreColor+'">'+scoreVal.toFixed(1)+'</div>'+
+    '<div class="dash-score-bar-wrap"><div class="dash-score-bar-fill" style="width:'+pct+'%;background:'+scoreColor+'"></div></div>';
+  row.appendChild(scoreCol);
+
+  return row;
+}
+
+function renderDashboard() {
+  var weekEl = document.getElementById('dash-week');
+  var monthEl = document.getElementById('dash-month');
+  weekEl.innerHTML = ''; monthEl.innerHTML = '';
+
+  // Exclude hot/cold from buy lists — not actionable entries
+  var eligible = CARDS.filter(function(c){
+    return c.sig !== 'cold';
+  });
+
+  // Week: sort by weekScore, take top 10
+  var weekCards = eligible.slice().sort(function(a,b){ return weekScore(b)-weekScore(a); }).slice(0,10);
+  weekCards.forEach(function(c,i){
+    weekEl.appendChild(makeDashRow(c, i+1, weekScore(c), true));
+  });
+
+  // Month: sort by monthScore (pure buy score), exclude already-in-week if score identical
+  var monthCards = eligible.slice().sort(function(a,b){ return monthScore(b)-monthScore(a); }).slice(0,10);
+  monthCards.forEach(function(c,i){
+    monthEl.appendChild(makeDashRow(c, i+1, monthScore(c), false));
+  });
+}
+
+// ── INIT ──
+renderDashboard();
 filterCards();
 </script>
 </body>
